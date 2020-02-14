@@ -32,25 +32,28 @@ async function init({ onTargetSelect, onTargetCancel }) {
 	const poolIdQuery = params.get('poolId')
 	const createdQuery = params.get('created')
 
-	const clips = await performSearch({
-		server,
-		query: { title: titleQuery, poolId: poolIdQuery, created: createdQuery }
-	})
-	buildClipList(clips)
+	performSearch(
+		{
+			server,
+			query: { title: titleQuery, poolId: poolIdQuery, created: createdQuery }
+		},
+		3000
+	)
+
 	setupDragTracking(classNames.CLIP_ITEM, {
 		onDragStart: (clipItem, dataTransfer) => {
-			const guid = clipItem.dataset[dataAttributeNames.GUID]
-			if (guid) {
-				onTargetSelect(guid)
+			const clip = clipItem.dataset[dataAttributeNames.CLIP]
+			if (clip) {
+				onTargetSelect(clip)
 
-				const ncsItem = createQuantelClipNcsItem(clips.find((clip) => clip.guid === guid))
+				const ncsItem = createQuantelClipNcsItem(clip)
 				dataTransfer.setData('text', new XMLSerializer().serializeToString(ncsItem))
 			}
 		},
 		onDragEnd: (clipItem) => {
 			const guid = clipItem.dataset[dataAttributeNames.GUID]
 			if (guid) {
-				onTargetCancel(guid)
+				onTargetCancel()
 			}
 		}
 	})
@@ -70,19 +73,35 @@ function setupDragTracking(className, { onDragStart, onDragEnd }) {
 	})
 }
 
-function buildClipList(clips) {
-	const resultsList = document.querySelector(`.${classNames.CLIP_LIST}`)
-	clips.forEach((clip) => {
-		const clipListelement = createClipListElement(clip)
-		resultsList.appendChild(clipListelement)
-	})
+function rebuildClipList(clips) {
+	const newClipList = buildClipList(clips)
+	const oldClipList = document.querySelector(`.${classNames.CLIP_LIST}`)
+	if (oldClipList) {
+		oldClipList.parentElement.replaceChild(newClipList, oldClipList)
+	} else {
+		document.body.appendChild(newClipList)
+	}
 }
 
-async function performSearch({ server, query }) {
+function buildClipList(clips) {
+	const clipList = document.createElement('ol')
+	clipList.classList.add(classNames.CLIP_LIST)
+	clips.forEach((clip) => {
+		const clipListelement = createClipListElement(clip)
+		clipList.appendChild(clipListelement)
+	})
+	return clipList
+}
+
+async function performSearch({ server, query }, refreshAfter) {
 	const quantelAgent = new QuantelAgent(server)
 	const result = await quantelAgent.searchClip({ title: query.title })
 
-	return result.clips
+	rebuildClipList(result.clips)
+
+	if (!Number.isNaN(Number(refreshAfter)) && refreshAfter > 0) {
+		setTimeout(performSearch, refreshAfter, { server, query }, refreshAfter)
+	}
 }
 
 function createClipListElement(clip) {
@@ -91,6 +110,7 @@ function createClipListElement(clip) {
 	listItem.classList.add(classNames.CLIP_ITEM)
 	listItem.textContent = clip.title
 	listItem.dataset[dataAttributeNames.GUID] = clip.guid
+	listItem.dataset[dataAttributeNames.CLIP] = JSON.stringify(clip)
 
 	return listItem
 }
