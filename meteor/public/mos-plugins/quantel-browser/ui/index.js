@@ -42,12 +42,17 @@ async function init({ onTargetSelect, onTargetCancel }) {
 
 	setupDragTracking(classNames.CLIP_ITEM, {
 		onDragStart: (clipItem, dataTransfer) => {
-			const clip = clipItem.dataset[dataAttributeNames.CLIP]
-			if (clip) {
-				onTargetSelect(clip)
+			try {
+				const clipData = clipItem.dataset[dataAttributeNames.CLIP]
+				if (clipData) {
+					const clip = JSON.parse(clipData)
+					onTargetSelect(clip)
 
-				const ncsItem = createQuantelClipNcsItem(clip)
-				dataTransfer.setData('text', new XMLSerializer().serializeToString(ncsItem))
+					const ncsItem = createQuantelClipNcsItem(clip)
+					dataTransfer.setData('text', new XMLSerializer().serializeToString(ncsItem))
+				}
+			} catch (error) {
+				console.error('Error while selecting clip', error)
 			}
 		},
 		onDragEnd: (clipItem) => {
