@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: i18next-conv\n"
-"POT-Creation-Date: 2020-01-10T17:37:50.515Z\n"
-"PO-Revision-Date: 2020-02-19 16:16+0100\n"
+"POT-Creation-Date: 2020-03-04T08:26:08.620Z\n"
+"PO-Revision-Date: 2020-03-04 09:34+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: nn\n"
@@ -419,7 +419,7 @@ msgid "Playout Gateway \"{{playoutDeviceName}}\" is now restarting."
 msgstr "Playout Gateway \"{{playoutDeviceName}}\" startar om att."
 
 msgid "Could not restart Playout Gateway \"{{playoutDeviceName}}\"."
-msgstr "Playout gateway \"{{playoutDeviceName}}\" kunne ikkje startas om att."
+msgstr "Playout Gateway \"{{playoutDeviceName}}\" kunne ikkje startas om att."
 
 msgid "Restart CasparCG Server"
 msgstr "Start Caspar på nytt"
@@ -442,7 +442,7 @@ msgid "Take a Snapshot"
 msgstr "Lagre eit snapshot"
 
 msgid "Restart Playout"
-msgstr "Start avspelling på ny"
+msgstr "Start Playout Gateway på ny"
 
 msgid "Restart {{device}}"
 msgstr "Start {{device}} på ny"
@@ -1277,6 +1277,9 @@ msgstr "Alt er greitt, gå og finn deg ein"
 msgid "New Layout"
 msgstr "Ny layout"
 
+msgid "Button"
+msgstr "Knapp"
+
 msgid "New Tab"
 msgstr "Ny fane"
 
@@ -1292,17 +1295,13 @@ msgstr "Slett layout?"
 msgid "Are you sure you want to delete the shelf layout \"{{name}}\"?"
 msgstr "Er du sikker på at du vil slette hylleoppsettet \"{{name}}\"?"
 
-msgid "Only Match Global AdLibs"
-msgstr "Inkluder bare hurtigtastar"
+#, fuzzy
+#| msgid "Action"
+msgid "Action Buttons"
+msgstr "Handling"
 
-msgid "Tabs"
-msgstr "Faner"
-
-msgid "Panels"
-msgstr "Paneler"
-
-msgid "Name"
-msgstr "Namn"
+msgid "Label"
+msgstr "Etikett"
 
 msgid "X"
 msgstr "X"
@@ -1315,6 +1314,18 @@ msgstr "Breidde"
 
 msgid "Height"
 msgstr "Høgde"
+
+msgid "Only Match Global AdLibs"
+msgstr "Inkluder bare hurtigtastar"
+
+msgid "Tabs"
+msgstr "Faner"
+
+msgid "Panels"
+msgstr "Paneler"
+
+msgid "Name"
+msgstr "Namn"
 
 msgid "Button width scale factor"
 msgstr "Målestokk for knappen si breidde"
@@ -1349,11 +1360,23 @@ msgstr "Filter deaktivert"
 msgid "Label contains"
 msgstr "Etikett inneheld"
 
+msgid "Tags must contain"
+msgstr "Tagger må innehalde"
+
 msgid "Register Shortcuts for this Panel"
 msgstr "Legg til snarvegar for dette panelet"
 
 msgid "Default Layout"
 msgstr "Standardlayout"
+
+msgid "Add tab"
+msgstr "Legg til fane"
+
+msgid "Add panel"
+msgstr "Legg til panel"
+
+msgid "Add button"
+msgstr "Legg til knapp"
 
 msgid "Upload Layout?"
 msgstr "Last opp layout?"
@@ -2048,6 +2071,15 @@ msgstr "Parametrar"
 
 msgid "User Activity Log"
 msgstr "Aktivitetslogg"
+
+msgid "Disable hints by adding this to the URL:"
+msgstr "Deaktiver hint ved å legge dette til på url-en:"
+
+msgid "Enable hints by adding this to the URL:"
+msgstr "Aktiver hint ved å legge dette til på url-en:"
+
+msgid "More documentation available at:"
+msgstr "Meir dokumentasjon er tilgjengeleg på"
 
 msgid "Recordings"
 msgstr "Opptak"
