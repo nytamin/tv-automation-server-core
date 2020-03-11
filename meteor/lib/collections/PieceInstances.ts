@@ -1,11 +1,12 @@
 import { TransformedCollection } from '../typings/meteor'
 import { registerCollection, literal, ProtectedString, ProtectedStringProperties, protectString, Omit } from '../lib'
 import { Meteor } from 'meteor/meteor'
-import { IBlueprintPieceInstance, Time, IBlueprintResolvedPieceInstance } from 'tv-automation-sofie-blueprints-integration'
+import { IBlueprintPieceInstance, Time, IBlueprintResolvedPieceInstance, InfiniteMode } from 'tv-automation-sofie-blueprints-integration'
 import { createMongoCollection } from './lib'
 import { Piece } from './Pieces'
 import { PartInstance, PartInstanceId } from './PartInstances'
 import { RundownId } from './Rundowns'
+import { InfinitePieceId } from './InfinitePiece';
 
 /** A string, identifying a PieceInstance */
 export type PieceInstanceId = ProtectedString<'PieceInstanceId'>
@@ -26,6 +27,12 @@ export interface PieceInstance extends ProtectedStringProperties<Omit<IBlueprint
 	partInstanceId: PartInstanceId
 
 	piece: Piece
+
+	infinite?: {
+		infinitePieceId: InfinitePieceId
+		mode: InfiniteMode // In case the original piece gets destroyed/mutated? // TODO - is this wanted?
+		// TODO - more properties?
+	}
 }
 
 export interface ResolvedPieceInstance extends PieceInstance, Omit<IBlueprintResolvedPieceInstance, '_id' | 'piece'> {

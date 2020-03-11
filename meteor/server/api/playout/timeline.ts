@@ -456,8 +456,8 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 	if (currentPartInstance) {
 
 		const currentPieces = currentPartInstance.getAllPieceInstances()
-		const currentInfinitePieces = currentPieces.filter(l => (l.piece.infiniteMode && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
-		const currentNormalItems = currentPieces.filter(l => !(l.piece.infiniteMode && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
+		const currentInfinitePieces = currentPieces.filter(l => (l.infinite && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
+		const currentNormalItems = currentPieces.filter(l => !(l.infinite && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
 
 		let allowTransition = false
 

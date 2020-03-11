@@ -1,7 +1,7 @@
 import * as _ from 'underscore'
 import { pushOntoPath, setOntoPath, mongoWhere, literal, unsetPath, pullFromPath, Omit, ProtectedString, unprotectString, protectString } from '../lib/lib'
 import { RandomMock } from './random'
-import { UpsertOptions, UpdateOptions, MongoSelector, FindOptions, ObserveChangesCallbacks } from '../lib/typings/meteor'
+import { UpsertOptions, UpdateOptions, MongoSelector, FindOptions, ObserveChangesCallbacks, SortSpecifier } from '../lib/typings/meteor'
 import { MeteorMock } from './meteor'
 import { Mongo } from 'meteor/mongo'
 import { Random } from 'meteor/random'
@@ -54,14 +54,41 @@ export namespace MongoMock {
 				_.filter(docsArray, (doc) => mongoWhere(doc, query))
 			))
 
-			if (options && options.sort) {
-				let tmpDocs = _.chain(docs)
-				for (const key of _.keys(options.sort)) {
-					const dir = options.sort[key]
-					// TODO - direction
-					tmpDocs = tmpDocs.sortBy(doc => doc[key])
+			if (options && options.sort && _.keys(options.sort).length > 0) {
+				const sortHelper = (keys: SortSpecifier, a: T, b: T) => {
+					// Exit condition
+					if (_.keys(keys).length == 0) {
+						return 0
+					}
+
+					// pop off the key to use
+					const key = _.keys(keys)[0]
+					const dir = keys[key]
+					delete keys[key]
+
+					const a2 = a[key]
+					const b2 = b[key]
+
+					// Do compare
+					if (a2 < b2) {
+						return -dir
+					} else if (b2 > a2) {
+						return dir
+					} else {
+						return sortHelper(keys, a, b)
+					}
 				}
-				docs = tmpDocs.value()
+
+				docs.sort((a, b) => sortHelper(_.clone(options.sort!), a, b))
+
+
+				// let tmpDocs = _.chain(docs)
+				// for (const key of _.keys(options.sort)) {
+				// 	const dir = options.sort[key]
+				// 	// TODO - direction
+				// 	tmpDocs = tmpDocs.sortBy(doc => doc[key])
+				// }
+				// docs = tmpDocs.value()
 			}
 
 			if (options && options.limit !== undefined) {

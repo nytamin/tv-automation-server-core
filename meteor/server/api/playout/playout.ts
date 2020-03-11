@@ -29,7 +29,7 @@ import { Random } from 'meteor/random'
 import * as _ from 'underscore'
 import { logger } from '../../logging'
 import {
-	PieceLifespan,
+	InfiniteMode,
 	PartHoldMode,
 	VTContent,
 	PartEndState
@@ -445,25 +445,27 @@ export namespace ServerPlayoutAPI {
 					// TODO-PartInstance - temporary mutate existing piece, pending new data flow
 					const rawPiece = rundownData.pieces.find(p => p._id === instance.piece._id)
 					if (rawPiece) {
-						rawPiece.infiniteId = rawPiece._id
-						rawPiece.infiniteMode = PieceLifespan.OutOnNextPart
-						ps.push(asyncCollectionUpdate(Pieces, rawPiece._id, {
-							$set: {
-								infiniteMode: PieceLifespan.OutOnNextPart,
-								infiniteId: rawPiece._id,
-							}
-						}))
+						// TODO
+						// rawPiece.infiniteId = rawPiece._id
+						// rawPiece.infiniteMode = PieceLifespan.OutOnNextPart
+						// ps.push(asyncCollectionUpdate(Pieces, rawPiece._id, {
+						// 	$set: {
+						// 		infiniteMode: PieceLifespan.OutOnNextPart,
+						// 		infiniteId: rawPiece._id,
+						// 	}
+						// }))
 					}
 
 					// mark current one as infinite
-					instance.piece.infiniteId = instance.piece._id
-					instance.piece.infiniteMode = PieceLifespan.OutOnNextPart
-					ps.push(asyncCollectionUpdate(PieceInstances, instance._id, {
-						$set: {
-							'piece.infiniteMode': PieceLifespan.OutOnNextPart,
-							'piece.infiniteId': instance.piece._id,
-						}
-					}))
+					// TODO
+					// instance.piece.infiniteId = instance.piece._id
+					// instance.piece.infiniteMode = PieceLifespan.OutOnNextPart
+					// ps.push(asyncCollectionUpdate(PieceInstances, instance._id, {
+					// 	$set: {
+					// 		'piece.infiniteMode': PieceLifespan.OutOnNextPart,
+					// 		'piece.infiniteId': instance.piece._id,
+					// 	}
+					// }))
 
 					// TODO-PartInstance - temporary piece extension, pending new data flow
 					const newPieceTmp: Piece = clone(instance.piece)

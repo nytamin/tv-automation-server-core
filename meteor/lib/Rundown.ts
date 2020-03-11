@@ -2,7 +2,6 @@ import * as _ from 'underscore'
 import * as SuperTimeline from 'superfly-timeline'
 import { Pieces, Piece, PieceId } from './collections/Pieces'
 import {
-	PieceLifespan,
 	getPieceGroupId,
 	IOutputLayer,
 	ISourceLayer
@@ -399,12 +398,14 @@ export function getResolvedSegment (
 						if (previousItem.renderedInPoint !== null && currentItem.renderedInPoint !== null && previousItem.renderedDuration !== null && currentItem.renderedDuration !== null &&
 							previousItem.renderedInPoint !== undefined && currentItem.renderedInPoint !== undefined && previousItem.renderedDuration !== undefined && currentItem.renderedDuration !== undefined) {
 							if ((previousItem.renderedInPoint + previousItem.renderedDuration > currentItem.renderedInPoint) ||
-							 (previousItem.instance.piece.infiniteMode)
+							 (previousItem.instance.infinite)
 								) {
 								previousItem.renderedDuration = currentItem.renderedInPoint - previousItem.renderedInPoint
 								previousItem.cropped = true
-								if (previousItem.instance.piece.infiniteMode) {
-									previousItem.instance.piece.infiniteMode = PieceLifespan.Normal
+								if (previousItem.instance.infinite) {
+									// TODO
+									delete previousItem.instance.infinite
+									// previousItem.instance.piece.infiniteMode = PieceLifespan.Normal
 								}
 							}
 

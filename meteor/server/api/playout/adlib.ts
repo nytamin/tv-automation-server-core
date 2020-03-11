@@ -75,7 +75,7 @@ export namespace ServerPlayoutAdLibAPI {
 						resolvedPieceBeingCopied &&
 						resolvedPieceBeingCopied.piece.playoutDuration !== undefined &&
 						(
-							pieceInstanceToCopy.piece.infiniteMode ||
+							pieceInstanceToCopy.infinite ||
 							pieceInstanceToCopy.piece.startedPlayback + resolvedPieceBeingCopied.piece.playoutDuration >= getCurrentTime()
 						)
 					) {

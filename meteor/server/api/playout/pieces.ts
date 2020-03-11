@@ -267,7 +267,7 @@ export function getResolvedPieces (partInstance: PartInstance): ResolvedPieceIns
 
 	// crop infinite pieces
 	resolvedPieces.forEach((pieceInstance, index, source) => {
-		if (pieceInstance.piece.infiniteMode) {
+		if (pieceInstance.infinite) {
 			for (let i = index + 1; i < source.length; i++) {
 				const sourcePieceInstance = source[i]
 				if (pieceInstance.piece.sourceLayerId === sourcePieceInstance.piece.sourceLayerId) {
@@ -305,7 +305,7 @@ export function getResolvedPiecesFromFullTimeline (playoutData: RundownPlaylistP
 
 	// crop infinite pieces
 	resolvedPieces.forEach((instance, index, source) => {
-		if (instance.piece.infiniteMode) { // && piece.infiniteMode !== PieceLifespan.OutOnNextPart) {
+		if (instance.infinite) { // && piece.infiniteMode !== PieceLifespan.OutOnNextPart) {
 			for (let i = index + 1; i < source.length; i++) {
 				const sourceInstance = source[i]
 				if (instance.piece.sourceLayerId === sourceInstance.piece.sourceLayerId) {
@@ -338,7 +338,8 @@ export function convertPieceToAdLibPiece (piece: Piece): AdLibPiece {
 		_rank: 0,
 		disabled: false,
 		dynamicallyInserted: true,
-		infiniteMode: piece.originalInfiniteMode !== undefined ? piece.originalInfiniteMode : piece.infiniteMode,
+		// TODO
+		// infiniteMode: piece.originalInfiniteMode !== undefined ? piece.originalInfiniteMode : piece.infiniteMode,
 		expectedDuration: _.isNumber(piece.enable.duration) ? piece.enable.duration : 0
 	})
 

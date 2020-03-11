@@ -6,7 +6,6 @@ import { Meteor } from 'meteor/meteor'
 import {
 	IBlueprintPieceGeneric,
 	IBlueprintPieceDB,
-	PieceLifespan,
 	BaseContent,
 	Timeline
 } from 'tv-automation-sofie-blueprints-integration'
@@ -19,7 +18,6 @@ export type InternalIBlueprintPieceGeneric = ProtectedStringProperties<IBlueprin
 
 /** A Single item in a Part: script, VT, cameras */
 export interface PieceGeneric extends InternalIBlueprintPieceGeneric {
-	// ------------------------------------------------------------------
 	_id: PieceId
 	/** ID of the source object in MOS */
 	externalId: string
@@ -54,15 +52,14 @@ export interface PieceGeneric extends InternalIBlueprintPieceGeneric {
 }
 
 export interface Piece extends PieceGeneric, ProtectedStringProperties<Omit<IBlueprintPieceDB, '_id' | 'partId' | 'continuesRefId'>, 'infiniteId'> {
-	// -----------------------------------------------------------------------
 
 	partId: PartId
 	/** This is set when an piece's duration needs to be overriden */
 	userDuration?: Pick<Timeline.TimelineEnable, 'duration' | 'end'>
-	/** This is set when the piece is infinite, to deduplicate the contents on the timeline, while allowing out of order */
-	infiniteMode?: PieceLifespan
-	/** This is a backup of the original infiniteMode of the piece, so that the normal field can be modified during playback and restored afterwards */
-	originalInfiniteMode?: PieceLifespan
+	// /** This is set when the piece is infinite, to deduplicate the contents on the timeline, while allowing out of order */
+	// infiniteMode?: PieceLifespan
+	// /** This is a backup of the original infiniteMode of the piece, so that the normal field can be modified during playback and restored afterwards */
+	// originalInfiniteMode?: PieceLifespan
 	// /** This is the id of the original segment of an infinite piece chain. If it matches the id of itself then it is the first in the chain */
 	infiniteId?: PieceId
 
