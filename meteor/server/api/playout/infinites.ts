@@ -7,16 +7,45 @@ import { Part, PartId, DBPart } from '../../../lib/collections/Parts'
 import { syncFunctionIgnore, syncFunction } from '../../codeControl'
 import { Piece, Pieces, PieceId } from '../../../lib/collections/Pieces'
 import { getOrderedPiece, PieceResolved, orderPieces } from './pieces'
-import { asyncCollectionUpdate, waitForPromiseAll, asyncCollectionRemove, asyncCollectionInsert, makePromise, waitForPromise, asyncCollectionFindFetch, literal, protectString, unprotectObject, waitForPromiseObj, normalizeArrayFunc } from '../../../lib/lib'
-import { PartInstance, PartInstances } from '../../../lib/collections/PartInstances'
+import { asyncCollectionUpdate, waitForPromiseAll, asyncCollectionRemove, asyncCollectionInsert, makePromise, waitForPromise, asyncCollectionFindFetch, literal, protectString, unprotectObject, waitForPromiseObj, normalizeArrayFunc, normalizeArray, unprotectString } from '../../../lib/lib'
+import { PartInstance, PartInstances, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { PieceInstances, PieceInstance, wrapPieceToInstance } from '../../../lib/collections/PieceInstances'
 import { RundownPlaylist } from '../../../lib/collections/RundownPlaylists'
 import { getPartsAfter } from './lib'
 import { SegmentId, Segment, Segments, DBSegment } from '../../../lib/collections/Segments'
-import { InfinitePiece, InfinitePieces } from '../../../lib/collections/InfinitePiece'
+import { InfinitePiece, InfinitePieces, InfinitePieceId } from '../../../lib/collections/InfinitePiece'
 import { ShowStyleBase, DBShowStyleBase } from '../../../lib/collections/ShowStyleBases'
 
+export interface InfinitePiecesToCopy {
+	existingInstances: PieceInstance[]
+	newInfinites: InfinitePiece[]
+}
 
+export function getInfinitePiecesToCopy(previousPartInstanceId: PartInstanceId, infinites: InfinitePiece[]): InfinitePiecesToCopy {
+	const pieceIds = _.map(infinites, inf => inf.piece._id)
+
+	const pieceInstances = PieceInstances.find({
+		partInstanceId: previousPartInstanceId,
+		'piece._id': { $in: pieceIds }
+	}).fetch()
+	const pieceInstancesMap = normalizeArrayFunc(pieceInstances, piece => unprotectString(piece.piece._id))
+
+	const result: InfinitePiecesToCopy = {
+		existingInstances: [],
+		newInfinites: []
+	}
+
+	_.each(infinites, infinite => {
+		const instance = pieceInstancesMap[unprotectString(infinite.piece._id)]
+		if (instance) {
+			result.existingInstances.push(instance)
+		} else {
+			result.newInfinites.push(infinite)
+		}
+	})
+
+	return result
+}
 
 export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: RundownId[], rundown: DBRundown, segment: DBSegment, part: DBPart): InfinitePiece[] {
 	// if (!segment0 || segment0._id !== part.segmentId) {
@@ -53,7 +82,7 @@ export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: 
 			startRundownId: { $in: rundownIds },
 			$or: [
 				{
-					// same segment, and previous part
+					// same segment, and same/previous part
 					startRundownId: part.rundownId,
 					startSegmentId: part.segmentId,
 					startPartRank: { $lte: part._rank }
@@ -63,11 +92,10 @@ export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: 
 					startRundownId: part.rundownId,
 					startSegmentRank: { $lt: segment._rank }
 				},
-				{
-					// previous rundown
-					// TODO - unused flow currently
-					startRundownRank: { $lt: rundown._rank }
-				}
+				// {
+				// 	// previous rundown
+				// 	startRundownRank: { $lt: rundown._rank }
+				// }
 			]
 		}, {
 			sort: {
