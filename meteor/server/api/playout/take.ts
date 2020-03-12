@@ -25,9 +25,143 @@ import {
 import { IngestActions } from "../ingest/actions";
 import * as _ from 'underscore'
 
+function completeHold(playlist: RundownPlaylist, rundownData: RundownPlaylistPlayoutData) {
+	const ps: Promise<any>[] = []
+	ps.push(asyncCollectionUpdate(RundownPlaylists, playlist._id, {
+		$set: {
+			holdState: RundownHoldState.COMPLETE
+		}
+	}))
+
+	if (playlist.currentPartInstanceId) {
+		const currentPartInstance = rundownData.currentPartInstance
+		if (!currentPartInstance) throw new Meteor.Error(404, 'currentPart not found!')
+
+		// Remove the current extension line
+		ps.push(asyncCollectionRemove(PieceInstances, {
+			partInstanceId: currentPartInstance._id,
+			'piece.extendOnHold': true,
+			'piece.dynamicallyInserted': true
+		}))
+		// TODO-PartInstance - pending new data flow
+		ps.push(asyncCollectionRemove(Pieces, {
+			partId: currentPartInstance.part._id,
+			extendOnHold: true,
+			dynamicallyInserted: true
+		}))
+	}
+	if (!playlist.previousPartInstanceId) {
+		const previousPartInstance = rundownData.previousPartInstance
+		if (!previousPartInstance) throw new Meteor.Error(404, 'previousPart not found!')
+
+		// Clear the extended mark on the original
+		ps.push(asyncCollectionUpdate(PieceInstances, {
+			partInstanceId: previousPartInstance._id,
+			'piece.extendOnHold': true,
+			'piece.dynamicallyInserted': false
+		}, {
+			$unset: {
+				'piece.infiniteId': 0,
+				'piece.infiniteMode': 0,
+			}
+		}, { multi: true }))
+		// TODO-PartInstance - pending new data flow
+		ps.push(asyncCollectionUpdate(Pieces, {
+			partId: previousPartInstance.part._id,
+			extendOnHold: true,
+			dynamicallyInserted: false
+		}, {
+			$unset: {
+				infiniteId: 0,
+				infiniteMode: 0,
+			}
+		}, { multi: true }))
+	}
+	waitForPromiseAll(ps)
+
+	updateTimeline(playlist.studioId)
+}
+
+function startHold(rundownData: RundownPlaylistPlayoutData) {
+	const ps: Array<Promise<any>> = []
+
+	const previousPartInstance = rundownData.previousPartInstance
+	if (!previousPartInstance) throw new Meteor.Error(404, 'previousPart not found!')
+	const currentPartInstance = rundownData.currentPartInstance
+	if (!currentPartInstance) throw new Meteor.Error(404, 'currentPart not found!')
+
+	// Make a copy of any item which is flagged as an 'infinite' extension
+	const itemsToCopy = previousPartInstance.getAllPieceInstances().filter(i => i.piece.extendOnHold)
+	itemsToCopy.forEach(instance => {
+		// TODO-PartInstance - temporary mutate existing piece, pending new data flow
+		const rawPiece = rundownData.pieces.find(p => p._id === instance.piece._id)
+		if (rawPiece) {
+			// TODO
+			// rawPiece.infiniteId = rawPiece._id
+			// rawPiece.infiniteMode = PieceLifespan.OutOnNextPart
+			// ps.push(asyncCollectionUpdate(Pieces, rawPiece._id, {
+			// 	$set: {
+			// 		infiniteMode: PieceLifespan.OutOnNextPart,
+			// 		infiniteId: rawPiece._id,
+			// 	}
+			// }))
+		}
+
+		// mark current one as infinite
+		// TODO
+		// instance.piece.infiniteId = instance.piece._id
+		// instance.piece.infiniteMode = PieceLifespan.OutOnNextPart
+		// ps.push(asyncCollectionUpdate(PieceInstances, instance._id, {
+		// 	$set: {
+		// 		'piece.infiniteMode': PieceLifespan.OutOnNextPart,
+		// 		'piece.infiniteId': instance.piece._id,
+		// 	}
+		// }))
+
+		// TODO-PartInstance - temporary piece extension, pending new data flow
+		const newPieceTmp: Piece = clone(instance.piece)
+		newPieceTmp.partId = currentPartInstance.part._id
+		newPieceTmp.enable = { start: 0 }
+		const contentTmp = newPieceTmp.content as VTContent
+		if (contentTmp.fileName && contentTmp.sourceDuration && instance.piece.startedPlayback) {
+			contentTmp.seek = Math.min(contentTmp.sourceDuration, getCurrentTime() - instance.piece.startedPlayback)
+		}
+		newPieceTmp.dynamicallyInserted = true
+		newPieceTmp._id = protectString(instance.piece._id + '_hold')
+
+		// This gets deleted once the nextpart is activated, so it doesnt linger for long
+		ps.push(asyncCollectionUpsert(Pieces, newPieceTmp._id, newPieceTmp))
+		rundownData.pieces.push(newPieceTmp) // update the local collection
+
+		// make the extension
+		const newInstance = literal<PieceInstance>({
+			_id: protectString<PieceInstanceId>(instance._id + '_hold'),
+			rundownId: instance.rundownId,
+			partInstanceId: currentPartInstance._id,
+			piece: {
+				...clone(instance.piece),
+				_id: newPieceTmp._id,
+				partId: currentPartInstance.part._id,
+				enable: { start: 0 },
+				dynamicallyInserted: true
+			}
+		})
+		const content = newInstance.piece.content as VTContent | undefined
+		if (content && content.fileName && content.sourceDuration && instance.piece.startedPlayback) {
+			content.seek = Math.min(content.sourceDuration, getCurrentTime() - instance.piece.startedPlayback)
+		}
+
+		// This gets deleted once the nextpart is activated, so it doesnt linger for long
+		ps.push(asyncCollectionUpsert(PieceInstances, newInstance._id, newInstance))
+		rundownData.selectedInstancePieces.push(newInstance) // update the local collection
+	})
+
+	waitForPromiseAll(ps)
+}
+
 export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): ClientAPI.ClientResponse<void> {
 	check(rundownPlaylistId, String)
-	let now = getCurrentTime()
+	const now = getCurrentTime()
 
 	return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
 		let playlist = RundownPlaylists.findOne(rundownPlaylistId)
@@ -35,16 +169,16 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 		if (!playlist.active) throw new Meteor.Error(501, `RundownPlaylist "${rundownPlaylistId}" is not active!`)
 		if (!playlist.nextPartInstanceId) throw new Meteor.Error(500, 'nextPartInstanceId is not set!')
 
-		let timeOffset: number | null = playlist.nextTimeOffset || null
+		const timeOffset: number | null = playlist.nextTimeOffset || null
 
-		let firstTake = !playlist.startedPlayback
+		const isFirstTakeOfPlaylist = !playlist.startedPlayback
 		let rundownData = playlist.fetchAllPlayoutData()
 
 		const partInstance = rundownData.currentPartInstance || rundownData.nextPartInstance
 		const currentRundown = partInstance ? rundownData.rundownsMap[unprotectString(partInstance.rundownId)] : undefined
 		if (!currentRundown) throw new Meteor.Error(404, `Rundown "${partInstance && partInstance.rundownId || ''}" could not be found!`)
 
-		let pBlueprint = makePromise(() => getBlueprintOfRundown(currentRundown))
+		const pBlueprint = makePromise(() => getBlueprintOfRundown(currentRundown))
 
 		const currentPart = rundownData.currentPartInstance
 		if (currentPart) {
@@ -70,60 +204,7 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 			})
 		// If hold is active, then this take is to clear it
 		} else if (playlist.holdState === RundownHoldState.ACTIVE) {
-			const ps: Promise<any>[] = []
-			ps.push(asyncCollectionUpdate(RundownPlaylists, playlist._id, {
-				$set: {
-					holdState: RundownHoldState.COMPLETE
-				}
-			}))
-
-			if (playlist.currentPartInstanceId) {
-				const currentPartInstance = rundownData.currentPartInstance
-				if (!currentPartInstance) throw new Meteor.Error(404, 'currentPart not found!')
-
-				// Remove the current extension line
-				ps.push(asyncCollectionRemove(PieceInstances, {
-					partInstanceId: currentPartInstance._id,
-					'piece.extendOnHold': true,
-					'piece.dynamicallyInserted': true
-				}))
-				// TODO-PartInstance - pending new data flow
-				ps.push(asyncCollectionRemove(Pieces, {
-					partId: currentPartInstance.part._id,
-					extendOnHold: true,
-					dynamicallyInserted: true
-				}))
-			}
-			if (!playlist.previousPartInstanceId) {
-				const previousPartInstance = rundownData.previousPartInstance
-				if (!previousPartInstance) throw new Meteor.Error(404, 'previousPart not found!')
-
-				// Clear the extended mark on the original
-				ps.push(asyncCollectionUpdate(PieceInstances, {
-					partInstanceId: previousPartInstance._id,
-					'piece.extendOnHold': true,
-					'piece.dynamicallyInserted': false
-				}, {
-					$unset: {
-						'piece.infiniteId': 0,
-						'piece.infiniteMode': 0,
-					}
-				}, { multi: true }))
-				// TODO-PartInstance - pending new data flow
-				ps.push(asyncCollectionUpdate(Pieces, {
-					partId: previousPartInstance.part._id,
-					extendOnHold: true,
-					dynamicallyInserted: false
-				}, {
-					$unset: {
-						infiniteId: 0,
-						infiniteMode: 0,
-					}
-				}, { multi: true }))
-			}
-			waitForPromiseAll(ps)
-
-			updateTimeline(playlist.studioId)
+			completeHold(playlist, rundownData)
 			return ClientAPI.responseSuccess(undefined)
 		}
 
@@ -135,8 +216,7 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 		// let takeSegment = rundownData.segmentsMap[takePart.segmentId]
 		const nextPart = selectNextPart(takePartInstance, rundownData.parts)
 
-		// beforeTake(rundown, previousPart || null, takePart)
-		beforeTake(rundownData, previousPartInstance || null, takePartInstance)
+		copyOverflowingPieces(rundownData, previousPartInstance || null, takePartInstance)
 
 		const { blueprint } = waitForPromise(pBlueprint)
 		if (blueprint.onPreTake) {
@@ -168,6 +248,7 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 		ps.push(asyncCollectionUpdate(RundownPlaylists, playlist._id, {
 			$set: m
 		}))
+		playlist = _.extend(playlist, m) as RundownPlaylist
 
 		let partInstanceM: any = {
 			$set: {
@@ -221,18 +302,11 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 				}))
 			}
 		}
-		playlist = _.extend(playlist, m) as RundownPlaylist
-		// rundownData = {
-		// 	...rundownData,
-		// 	previousPartInstance: rundownData.currentPartInstance,
-		// 	currentPartInstance: rundownData.nextPartInstance,
-		// 	nextPartInstance: undefined
-		// }
 
 		waitForPromiseAll(ps)
+
 		// Once everything is synced, we can choose the next part
 		libSetNextPart(playlist, nextPart ? nextPart.part : null)
-		ps = []
 
 		// update playoutData
 		// const newSelectedPartInstances = playlist.getSelectedPartInstances()
@@ -244,79 +318,9 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 
 		// Setup the parts for the HOLD we are starting
 		if (playlist.previousPartInstanceId && m.holdState === RundownHoldState.ACTIVE) {
-			const previousPartInstance = rundownData.previousPartInstance
-			if (!previousPartInstance) throw new Meteor.Error(404, 'previousPart not found!')
-			const currentPartInstance = rundownData.currentPartInstance
-			if (!currentPartInstance) throw new Meteor.Error(404, 'currentPart not found!')
-
-			// Make a copy of any item which is flagged as an 'infinite' extension
-			const itemsToCopy = previousPartInstance.getAllPieceInstances().filter(i => i.piece.extendOnHold)
-			itemsToCopy.forEach(instance => {
-				// TODO-PartInstance - temporary mutate existing piece, pending new data flow
-				const rawPiece = rundownData.pieces.find(p => p._id === instance.piece._id)
-				if (rawPiece) {
-					// TODO
-					// rawPiece.infiniteId = rawPiece._id
-					// rawPiece.infiniteMode = PieceLifespan.OutOnNextPart
-					// ps.push(asyncCollectionUpdate(Pieces, rawPiece._id, {
-					// 	$set: {
-					// 		infiniteMode: PieceLifespan.OutOnNextPart,
-					// 		infiniteId: rawPiece._id,
-					// 	}
-					// }))
-				}
-
-				// mark current one as infinite
-				// TODO
-				// instance.piece.infiniteId = instance.piece._id
-				// instance.piece.infiniteMode = PieceLifespan.OutOnNextPart
-				// ps.push(asyncCollectionUpdate(PieceInstances, instance._id, {
-				// 	$set: {
-				// 		'piece.infiniteMode': PieceLifespan.OutOnNextPart,
-				// 		'piece.infiniteId': instance.piece._id,
-				// 	}
-				// }))
-
-				// TODO-PartInstance - temporary piece extension, pending new data flow
-				const newPieceTmp: Piece = clone(instance.piece)
-				newPieceTmp.partId = currentPartInstance.part._id
-				newPieceTmp.enable = { start: 0 }
-				const contentTmp = newPieceTmp.content as VTContent
-				if (contentTmp.fileName && contentTmp.sourceDuration && instance.piece.startedPlayback) {
-					contentTmp.seek = Math.min(contentTmp.sourceDuration, getCurrentTime() - instance.piece.startedPlayback)
-				}
-				newPieceTmp.dynamicallyInserted = true
-				newPieceTmp._id = protectString(instance.piece._id + '_hold')
-
-				// This gets deleted once the nextpart is activated, so it doesnt linger for long
-				ps.push(asyncCollectionUpsert(Pieces, newPieceTmp._id, newPieceTmp))
-				rundownData.pieces.push(newPieceTmp) // update the local collection
-
-				// make the extension
-				const newInstance = literal<PieceInstance>({
-					_id: protectString<PieceInstanceId>(instance._id + '_hold'),
-					rundownId: instance.rundownId,
-					partInstanceId: currentPartInstance._id,
-					piece: {
-						...clone(instance.piece),
-						_id: newPieceTmp._id,
-						partId: currentPartInstance.part._id,
-						enable: { start: 0 },
-						dynamicallyInserted: true
-					}
-				})
-				const content = newInstance.piece.content as VTContent | undefined
-				if (content && content.fileName && content.sourceDuration && instance.piece.startedPlayback) {
-					content.seek = Math.min(content.sourceDuration, getCurrentTime() - instance.piece.startedPlayback)
-				}
-
-				// This gets deleted once the nextpart is activated, so it doesnt linger for long
-				ps.push(asyncCollectionUpsert(PieceInstances, newInstance._id, newInstance))
-				rundownData.selectedInstancePieces.push(newInstance) // update the local collection
-
-			})
+			startHold(rundownData)
 		}
-		waitForPromiseAll(ps)
+
 		afterTake(rundownData, takePartInstance, timeOffset)
 
 		// Last:
@@ -334,7 +338,7 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 					}
 				})
 				// let bp = getBlueprintOfRundown(rundown)
-				if (firstTake) {
+				if (isFirstTakeOfPlaylist) {
 					if (blueprint.onRundownFirstTake) {
 						waitForPromise(
 							Promise.resolve(blueprint.onRundownFirstTake(new PartEventContext(takeRundown, undefined, takePartInstance)))
@@ -357,7 +361,7 @@ export function takeNextPartInner (rundownPlaylistId: RundownPlaylistId): Client
 }
 
 
-function beforeTake (playoutData: RundownPlaylistPlayoutData, currentPartInstance: PartInstance | null, nextPartInstance: PartInstance) {
+function copyOverflowingPieces (playoutData: RundownPlaylistPlayoutData, currentPartInstance: PartInstance | null, nextPartInstance: PartInstance) {
 	// TODO-PartInstance - is this going to work? It needs some work to handle part data changes
 	if (currentPartInstance) {
 		const adjacentPart = _.find(playoutData.parts, (part) => {
