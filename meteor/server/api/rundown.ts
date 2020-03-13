@@ -291,6 +291,10 @@ export function updatePartRanks (rundown: Rundown): Array<Part> {
 		}
 		if (part._rank !== newRank) {
 			ps.push(asyncCollectionUpdate(Parts, part._id, { $set: { _rank: newRank } }))
+			ps.push(asyncCollectionUpdate(PartInstances, {
+				'part._id': part._id,
+				reset: { $ne: true }
+			}, { $set: { 'part._rank': newRank } }))
 			// Update in place, for the upcoming algorithm
 			part._rank = newRank
 		}

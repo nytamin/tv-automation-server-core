@@ -52,7 +52,8 @@ export class VTSourceRendererBase extends CustomLayerItemRenderer<IProps & Injec
 
 	updateTime = () => {
 		if (this.vPreview) {
-			const innerPiece = this.props.piece.instance.piece
+			const pieceInstance = this.props.piece.instance
+			const innerPiece = pieceInstance.piece
 			const vtContent = innerPiece.content as VTContent | undefined
 
 			const itemDuration = ((vtContent ? vtContent.sourceDuration : undefined) || innerPiece.playoutDuration || this.props.piece.renderedDuration || 0)
@@ -64,7 +65,7 @@ export class VTSourceRendererBase extends CustomLayerItemRenderer<IProps & Injec
 						Math.min(this.vPreview.duration, itemDuration) :
 						this.vPreview.duration)
 					* 1000)
-			} else if (itemDuration === 0 && innerPiece.infiniteMode) {
+			} else if (itemDuration === 0 && pieceInstance.infinite) {
 				// noop
 			} else {
 				targetTime = Math.min(targetTime, itemDuration)

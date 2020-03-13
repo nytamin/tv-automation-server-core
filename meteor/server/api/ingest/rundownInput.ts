@@ -49,7 +49,7 @@ import { ShowStyleContext, RundownContext, SegmentContext, NotesContext } from '
 import { Blueprints, Blueprint, BlueprintId } from '../../../lib/collections/Blueprints'
 import { RundownBaselineObj, RundownBaselineObjs, RundownBaselineObjId } from '../../../lib/collections/RundownBaselineObjs'
 import { Random } from 'meteor/random'
-import { postProcessRundownBaselineItems, postProcessAdLibPieces, postProcessPieces } from '../blueprints/postProcess'
+import { postProcessRundownBaselineItems, postProcessAdLibPieces, postProcessPieces, postProcessInfinitePieces } from '../blueprints/postProcess'
 import { RundownBaselineAdLibItem, RundownBaselineAdLibPieces } from '../../../lib/collections/RundownBaselineAdLibPieces'
 import { DBSegment, Segments, SegmentId } from '../../../lib/collections/Segments'
 import { AdLibPiece, AdLibPieces } from '../../../lib/collections/AdLibPieces'
@@ -67,6 +67,7 @@ import { Mongo } from 'meteor/mongo'
 import { isTooCloseToAutonext } from '../playout/lib'
 import { PartInstances, PartInstance } from '../../../lib/collections/PartInstances'
 import { PieceInstances, wrapPieceToInstance, PieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
+import { InfinitePiece, InfinitePieces } from '../../../lib/collections/InfinitePiece';
 
 /** Priority for handling of synchronous events. Lower means higher priority */
 export enum RundownSyncFunctionPriority {
@@ -388,6 +389,7 @@ function updateRundownFromIngestData (
 	const parts: DBPart[] = []
 	const segmentPieces: Piece[] = []
 	const adlibPieces: AdLibPiece[] = []
+	const infinitePieces: InfinitePiece[] = []
 
 	const { blueprint, blueprintId } = getBlueprintOfRundown(dbRundown)
 
@@ -407,6 +409,7 @@ function updateRundownFromIngestData (
 		parts.push(...segmentContents.parts)
 		segmentPieces.push(...segmentContents.segmentPieces)
 		adlibPieces.push(...segmentContents.adlibPieces)
+		infinitePieces.push(...segmentContents.infinitePieces)
 	})
 
 	const allChanges = sumChanges(
@@ -472,6 +475,21 @@ function updateRundownFromIngestData (
 			}
 		}),
 
+		saveIntoDb<InfinitePiece, InfinitePiece>(InfinitePieces, {
+			rundownId: rundownId,
+		}, infinitePieces, {
+			afterInsert (piece) {
+				logger.debug('inserted infinitePiece ' + piece._id)
+				logger.debug(piece)
+			},
+			afterUpdate (piece) {
+				logger.debug('updated infinitePiece ' + piece._id)
+			},
+			afterRemove (piece) {
+				logger.debug('deleted infinitePiece ' + piece._id)
+			}
+		}),
+
 		saveIntoDb<AdLibPiece, AdLibPiece>(AdLibPieces, {
 			rundownId: rundownId,
 		}, adlibPieces, {
@@ -480,10 +498,10 @@ function updateRundownFromIngestData (
 				logger.debug(adLibPiece)
 			},
 			afterUpdate (adLibPiece) {
-				logger.debug('updated piece ' + adLibPiece._id)
+				logger.debug('updated adLibPiece ' + adLibPiece._id)
 			},
 			afterRemove (adLibPiece) {
-				logger.debug('deleted piece ' + adLibPiece._id)
+				logger.debug('deleted adLibPiece ' + adLibPiece._id)
 			}
 		})
 	)
@@ -683,10 +701,9 @@ function updateSegmentFromIngestData (
 	const context = new SegmentContext(rundown, studio, existingParts, notesContext)
 	const res = blueprint.getSegment(context, ingestSegment)
 
-	const { parts, segmentPieces, adlibPieces, newSegment } = generateSegmentContents(context, blueprintId, ingestSegment, existingSegment, existingParts, res)
+	const { parts, segmentPieces, adlibPieces, infinitePieces, newSegment } = generateSegmentContents(context, blueprintId, ingestSegment, existingSegment, existingParts, res)
 
 	waitForPromise(Promise.all([
-
 		// Update segment info:
 		asyncCollectionUpsert(Segments, {
 			_id: segmentId,
@@ -739,6 +756,21 @@ function updateSegmentFromIngestData (
 			},
 			afterRemove (piece) {
 				logger.debug('deleted piece ' + piece._id)
+			}
+		}),
+		saveIntoDb<InfinitePiece, InfinitePiece>(InfinitePieces, {
+			startRundownId: rundown._id,
+			startPartId: { $in: parts.map(p => p._id) },
+		}, infinitePieces, {
+			afterInsert (piece) {
+				logger.debug('inserted infinitePiece ' + piece._id)
+				logger.debug(piece)
+			},
+			afterUpdate (piece) {
+				logger.debug('updated infinitePiece ' + piece._id)
+			},
+			afterRemove (piece) {
+				logger.debug('deleted infinitePiece ' + piece._id)
 			}
 		}),
 		saveIntoDb<AdLibPiece, AdLibPiece>(AdLibPieces, {
@@ -877,6 +909,7 @@ function generateSegmentContents (
 	const parts: DBPart[] = []
 	const segmentPieces: Piece[] = []
 	const adlibPieces: AdLibPiece[] = []
+	const infinitePieces: InfinitePiece[] = []
 
 	// Parts
 	blueprintRes.parts.forEach((blueprintPart, i) => {
@@ -902,7 +935,7 @@ function generateSegmentContents (
 			_id: partId,
 			rundownId: rundownId,
 			segmentId: newSegment._id,
-			_rank: i, // This gets updated to a rank unique within its segment in a later step
+			_rank: i,
 			notes: notes,
 		})
 		parts.push(part)
@@ -918,12 +951,17 @@ function generateSegmentContents (
 
 		const adlibs = postProcessAdLibPieces(context, blueprintPart.adLibPieces, blueprintId, part._id)
 		adlibPieces.push(...adlibs)
+
+		const infinites = postProcessInfinitePieces(context, blueprintPart.infinitePieces, blueprintId, part._id, newSegment._id)
+		// TODO - when the part is invalid, these should either be invalid themselves, or deleted
+		infinitePieces.push(...infinites)
 	})
 
 	return {
 		newSegment,
 		parts,
 		segmentPieces,
-		adlibPieces
+		adlibPieces,
+		infinitePieces
 	}
 }

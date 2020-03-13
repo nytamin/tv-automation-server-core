@@ -247,7 +247,6 @@ export class RundownContext extends ShowStyleContext implements IRundownContext 
 export type BlueprintRuntimeArgumentsSet = { [key: string]: BlueprintRuntimeArguments | undefined }
 export class SegmentContext extends RundownContext implements ISegmentContext {
 	private readonly runtimeArguments: Readonly<BlueprintRuntimeArgumentsSet>
-	private readonly segment: Readonly<Segment>
 
 	constructor (rundown: Rundown, studio: Studio | undefined, runtimeArguments: BlueprintRuntimeArgumentsSet | DBPart[], notesContext: NotesContext) {
 		super(rundown, notesContext, studio)

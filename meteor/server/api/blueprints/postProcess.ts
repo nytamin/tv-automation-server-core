@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 import { Piece, InternalIBlueprintPieceGeneric } from '../../../lib/collections/Pieces'
 import { AdLibPiece } from '../../../lib/collections/AdLibPieces'
 import { RundownPlaylist } from '../../../lib/collections/RundownPlaylists'
-import { extendMandadory, getHash, protectString, unprotectString, Omit } from '../../../lib/lib'
+import { extendMandadory, getHash, protectString, unprotectString, Omit, omit, literal } from '../../../lib/lib'
 import {
 	TimelineObjGeneric,
 	TimelineObjRundown,
@@ -14,12 +14,15 @@ import {
 	TimelineObjectCoreExt,
 	IBlueprintPiece,
 	IBlueprintAdLibPiece,
-	RundownContext,
 	TSR,
+	IBlueprintInfinitePiece,
 } from 'tv-automation-sofie-blueprints-integration'
 import { RundownAPI } from '../../../lib/api/rundown'
 import { BlueprintId } from '../../../lib/collections/Blueprints'
 import { PartId } from '../../../lib/collections/Parts'
+import { InfinitePiece, InfinitePieceInner } from '../../../lib/collections/InfinitePiece';
+import { SegmentId } from '../../../lib/collections/Segments';
+import { RundownContext } from './context';
 
 export function postProcessPieces (innerContext: RundownContext, pieces: IBlueprintPiece[], blueprintId: BlueprintId, partId: PartId): Piece[] {
 	let i = 0
@@ -30,7 +33,7 @@ export function postProcessPieces (innerContext: RundownContext, pieces: IBluepr
 			...itemOrig as Omit<IBlueprintPiece, '_id' | 'continuesRefId'>,
 			_id: protectString(itemOrig._id),
 			continuesRefId: protectString(itemOrig.continuesRefId),
-			rundownId: protectString(innerContext.rundown._id),
+			rundownId: innerContext._rundown._id,
 			partId: partId,
 			status: RundownAPI.PieceStatusCode.UNKNOWN
 		}
@@ -66,7 +69,7 @@ export function postProcessAdLibPieces (innerContext: RundownContext, adLibPiece
 		let piece: AdLibPiece = {
 			...itemOrig,
 			_id: protectString(innerContext.getHashId(`${blueprintId}_${partId}_adlib_piece_${i++}`)),
-			rundownId: protectString(innerContext.rundown._id),
+			rundownId: innerContext._rundown._id,
 			partId: partId,
 			status: RundownAPI.PieceStatusCode.UNKNOWN,
 			disabled: false
@@ -82,6 +85,47 @@ export function postProcessAdLibPieces (innerContext: RundownContext, adLibPiece
 				const obj = convertTimelineObject(o)
 
 				if (!obj.id) obj.id = innerContext.getHashId(piece._id + '_adlib_' + (i++))
+
+				if (timelineUniqueIds[obj.id]) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" ids of timelineObjs must be unique! ("${innerContext.unhashId(obj.id)}")`)
+				timelineUniqueIds[obj.id] = true
+
+				return obj
+			})
+		}
+
+		return piece
+	})
+}
+
+export function postProcessInfinitePieces (innerContext: RundownContext, pieces: IBlueprintInfinitePiece[], blueprintId: BlueprintId, partId: PartId, segmentId: SegmentId): InfinitePiece[] {
+	let i = 0
+	let timelineUniqueIds: { [id: string]: true } = {}
+	return _.map(_.compact(pieces), (itemOrig: IBlueprintInfinitePiece) => {
+		const id = innerContext.getHashId(`${blueprintId}_${partId}_piece_${i++}`)
+		let piece: InfinitePiece = {
+			_id: protectString(id),
+			startRundownId: innerContext._rundown._id,
+			startRundownRank: 0, // TODO
+			startSegmentId: segmentId,
+			startSegmentRank: 0, // TODO
+			startPartId: partId,
+			startPartRank: 0, // TODO
+			piece: literal<InfinitePieceInner>({
+				...itemOrig,
+				_id: protectString(`${id}_infinite_inner`),
+				rundownId: innerContext._rundown._id,
+				partId: undefined,
+				status: RundownAPI.PieceStatusCode.UNKNOWN
+			})
+		}
+
+		if (!itemOrig.externalId) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" externalId not set for piece in ${partId}! ("${innerContext.unhashId(unprotectString(piece._id))}")`)
+
+		if (piece.piece.content && piece.piece.content.timelineObjects) {
+			piece.piece.content.timelineObjects = _.map(_.compact(piece.piece.content.timelineObjects), (o: TimelineObjectCoreExt) => {
+				const obj = convertTimelineObject(o)
+
+				if (!obj.id) obj.id = innerContext.getHashId(piece._id + '_' + (i++))
 
 				if (timelineUniqueIds[obj.id]) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" ids of timelineObjs must be unique! ("${innerContext.unhashId(obj.id)}")`)
 				timelineUniqueIds[obj.id] = true

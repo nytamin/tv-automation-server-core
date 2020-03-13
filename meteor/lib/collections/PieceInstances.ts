@@ -28,6 +28,7 @@ export interface PieceInstance extends ProtectedStringProperties<Omit<IBlueprint
 
 	piece: Piece
 
+	/** Only set when this pieceInstance is an infinite. It contains info about the infinite */
 	infinite?: {
 		infinitePieceId: InfinitePieceId
 		mode: InfiniteMode // In case the original piece gets destroyed/mutated? // TODO - is this wanted?
