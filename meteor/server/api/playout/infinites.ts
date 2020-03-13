@@ -21,7 +21,14 @@ export interface InfinitePiecesToCopy {
 	newInfinites: InfinitePiece[]
 }
 
-export function getInfinitePiecesToCopy(previousPartInstanceId: PartInstanceId, infinites: InfinitePiece[]): InfinitePiecesToCopy {
+export function getInfinitePiecesToCopy(previousPartInstanceId: PartInstanceId | null, infinites: InfinitePiece[]): InfinitePiecesToCopy {
+	if (!previousPartInstanceId) {
+		return {
+			existingInstances: [],
+			newInfinites: infinites
+		}
+	}
+
 	const pieceIds = _.map(infinites, inf => inf.piece._id)
 
 	const pieceInstances = PieceInstances.find({

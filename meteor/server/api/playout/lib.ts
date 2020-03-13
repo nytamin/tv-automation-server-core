@@ -21,16 +21,18 @@ import {
 	asyncCollectionFindFetch,
 	unprotectString,
 	protectString,
+	omit,
 } from '../../../lib/lib'
 import { TimelineObjGeneric } from '../../../lib/collections/Timeline'
 import { loadCachedIngestSegment } from '../ingest/ingestCache'
 import { updateSegmentsFromIngestData } from '../ingest/rundownInput'
-import { updateSourceLayerInfinitesAfterPart } from './infinites'
+import { updateSourceLayerInfinitesAfterPart, getInfinitesForPart, getInfinitePiecesToCopy } from './infinites'
 import { Studios } from '../../../lib/collections/Studios'
 import { DBSegment, Segments } from '../../../lib/collections/Segments'
 import { RundownPlaylist, RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
 import { PartInstance, PartInstances, DBPartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { PieceInstances, PieceInstance, wrapPieceToInstance } from '../../../lib/collections/PieceInstances'
+import { ShowStyleBases } from '../../../lib/collections/ShowStyleBases';
 
 /**
  * Reset the rundown:
@@ -422,9 +424,11 @@ export function setNextPart (
 		let newInstanceId: PartInstanceId
 		if (newNextPartInstance) {
 			newInstanceId = newNextPartInstance._id
+			// TODO - where do the infinite parts for this come from?
 		} else if (nextPartInstance && nextPartInstance.part._id === nextPart._id) {
 			// Re-use existing
 			newInstanceId = nextPartInstance._id
+			// TODO - does anything need to be updated?
 		} else {
 			// Create new isntance
 			newInstanceId = protectString<PartInstanceId>(`${nextPart._id}_${Random.id()}`)
@@ -443,6 +447,36 @@ export function setNextPart (
 				partId: nextPart._id
 			}).fetch()
 			const pieceInstances = _.map(rawPieces, piece => wrapPieceToInstance(piece, newInstanceId))
+
+			// Find all the infinites for this new partInstance
+			// TODO - tidy this up
+			const rundown = Rundowns.findOne(nextPart.rundownId)!
+			const showStyleBase = rundown.getShowStyleBase()
+			const segment = Segments.findOne(nextPart.segmentId)!
+			const infinites = getInfinitesForPart(showStyleBase, acceptableRundowns, rundown, segment, nextPart)
+			const infinitesToCopy = getInfinitePiecesToCopy(rundownPlaylist.currentPartInstanceId, infinites)
+
+			// Copy existing infinites
+			_.each(infinitesToCopy.existingInstances, existingInfinite => {
+				const newInstance = wrapPieceToInstance(existingInfinite.piece, newInstanceId)
+				newInstance.rundownId = nextPart.rundownId
+				newInstance.infinite = existingInfinite.infinite
+				pieceInstances.push(newInstance)
+			})
+			// Start new infinites
+			_.each(infinitesToCopy.newInfinites, newInfinite => {
+				const newInstance = wrapPieceToInstance({
+					...omit(newInfinite.piece, 'infiniteMode'),
+					partId: newInfinite.startPartId,
+				}, newInstanceId)
+				newInstance.rundownId = nextPart.rundownId
+				newInstance.infinite = {
+					infinitePieceId: newInfinite._id,
+					mode: newInfinite.piece.infiniteMode
+				}
+				pieceInstances.push(newInstance)
+			})
+
 			ps.push(asyncCollectionInsertMany(PieceInstances, pieceInstances).then(() =>
 				asyncCollectionUpdate(PartInstances, newInstanceId, {
 					$unset: {

@@ -49,7 +49,8 @@ import {
 	protectString,
 	unprotectString,
 	unprotectObjectArray,
-	unprotectObject
+	unprotectObject,
+	normalizeArrayFunc
 } from '../../../lib/lib'
 import { RundownPlaylistPlayoutData, RundownPlaylist, RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
 import { Rundowns, Rundown, RundownHoldState } from '../../../lib/collections/Rundowns'
@@ -456,8 +457,10 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 	if (currentPartInstance) {
 
 		const currentPieces = currentPartInstance.getAllPieceInstances()
-		const currentInfinitePieces = currentPieces.filter(l => (l.infinite && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
-		const currentNormalItems = currentPieces.filter(l => !(l.infinite && l.piece.infiniteId && l.piece.infiniteId !== l.piece._id))
+		// TODO - this will conflict when merging in TV2 stuff. It should look more like theirs than this.
+		const currentPartId = currentPartInstance.part._id
+		const currentInfinitePieces = currentPieces.filter(l => (l.infinite && l.piece.partId !== currentPartId))
+		const currentNormalItems = currentPieces.filter(l => !(l.infinite && l.piece.partId !== currentPartId))
 
 		let allowTransition = false
 
@@ -502,15 +505,22 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 		}
 		currentPartGroup = createPartGroup(currentPartInstance, currentPartEnable)
 
+		const previousPartInfinites = previousPartInstance ? normalizeArrayFunc(previousPartInstance.getAllPieceInstances(), inst => inst.infinite ? unprotectString(inst.infinite.infinitePieceId) : "") : {}
+
 		// any continued infinite lines need to skip the group, as they need a different start trigger
 		for (let piece of currentInfinitePieces) {
+			if (!piece.infinite) {
+				// Type guard, should never be hit
+				continue
+			}
+
 			const infiniteGroup = createPartGroup(currentPartInstance, { duration: piece.piece.enable.duration || undefined })
 			infiniteGroup.id = getPartGroupId(unprotectString(piece._id)) + '_infinite' // This doesnt want to belong to a part, so force the ids
 			infiniteGroup.priority = 1
 
 			const groupClasses: string[] = ['current_part']
 			// If the previousPart also contains another segment of this infinite piece, then we label our new one as such
-			if (previousPartInstance && previousPartInstance.getAllPieceInstances().filter(i => i.piece.infiniteId && i.piece.infiniteId === piece.piece.infiniteId)) {
+			if (previousPartInfinites[unprotectString(piece.infinite.infinitePieceId)]) {
 				groupClasses.push('continues_infinite')
 			}
 
@@ -536,8 +546,8 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 			}
 
 			// Still show objects flagged as 'HoldMode.EXCEPT' if this is a infinite continuation as they belong to the previous too
-			const showHoldExcept = piece.piece.infiniteId !== piece.piece._id
-			timelineObjs = timelineObjs.concat(infiniteGroup, transformPartIntoTimeline([piece], groupClasses, infiniteGroup, undefined, activePlaylist.holdState, showHoldExcept))
+			const isOriginOfInfinite = piece.piece.partId !== currentPartInstance.part._id
+			timelineObjs = timelineObjs.concat(infiniteGroup, transformPartIntoTimeline([piece], groupClasses, infiniteGroup, undefined, activePlaylist.holdState, isOriginOfInfinite))
 		}
 
 		const groupClasses: string[] = ['current_part']
