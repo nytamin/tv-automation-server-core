@@ -340,13 +340,6 @@ export function refreshPart (dbRundown: DBRundown, dbPart: DBPart) {
 	const rundown = new Rundown(dbRundown)
 
 	updateSegmentsFromIngestData(studio, rundown, [ingestSegment])
-
-	// const segment = Segments.findOne(dbPart.segmentId)
-	// if (!segment) throw new Meteor.Error(404, `Segment ${dbPart.segmentId} was not found`)
-
-	// This is run on the whole rundown inside the update, IF anything was changed
-	// const prevPart = getPartBeforeSegment(dbRundown._id, segment)
-	// updateSourceLayerInfinitesAfterPart(rundown, prevPart)
 }
 
 export function selectNextPart (previousPartInstance: PartInstance | null, parts: Part[]): { part: Part, index: number} | undefined {

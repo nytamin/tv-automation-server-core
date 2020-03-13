@@ -8,7 +8,6 @@ import { MediaObjects } from '../../lib/collections/MediaObjects'
 import { getCurrentTime } from '../../lib/lib'
 import { check } from 'meteor/check'
 import { Parts, PartId } from '../../lib/collections/Parts'
-import { updateSourceLayerInfinitesAfterPart } from '../api/playout/infinites'
 import { updateExpectedMediaItemsOnRundown } from '../api/expectedMediaItems'
 import { RundownPlaylists, RundownPlaylistId } from '../../lib/collections/RundownPlaylists'
 
@@ -57,21 +56,6 @@ Meteor.methods({
 		RundownPlaylists.find({}).forEach((playlist) => {
 			playlist.remove()
 		})
-	},
-
-	'debug_updateSourceLayerInfinitesAfterPart' (rundownId: RundownId, previousPartId?: PartId, runToEnd?: boolean) {
-		check(rundownId, String)
-		if (previousPartId) check(previousPartId, String)
-		if (runToEnd !== undefined) check(runToEnd, Boolean)
-
-		const rundown = Rundowns.findOne(rundownId)
-		if (!rundown) throw new Meteor.Error(404, 'Rundown not found')
-
-		const prevPart = previousPartId ? Parts.findOne(previousPartId) : undefined
-
-		updateSourceLayerInfinitesAfterPart(rundown, prevPart, runToEnd)
-
-		logger.info('debug_updateSourceLayerInfinitesAfterPart: done')
 	},
 
 	'debug_recreateExpectedMediaItems' () {

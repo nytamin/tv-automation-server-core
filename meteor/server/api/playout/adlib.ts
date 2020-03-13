@@ -13,7 +13,7 @@ import { RundownPlaylists, RundownPlaylist, RundownPlaylistId } from '../../../l
 import { Pieces, Piece, PieceId } from '../../../lib/collections/Pieces'
 import { Parts, Part, DBPart } from '../../../lib/collections/Parts'
 import { prefixAllObjectIds, setNextPart, getPartBeforeSegment, getPreviousPart } from './lib'
-import { cropInfinitesOnLayer, stopInfinitesRunningOnLayer, updateSourceLayerInfinitesAfterPart } from './infinites'
+import { updateInfinitesForNextedPieceInstance } from './infinites'
 import { convertAdLibToPieceInstance, getResolvedPieces, convertPieceToAdLibPiece } from './pieces'
 import { updateTimeline } from './timeline'
 import { updatePartRanks, afterRemoveParts } from '../rundown'
@@ -99,8 +99,7 @@ export namespace ServerPlayoutAdLibAPI {
 			// TODO-PartInstance - pending new data flow
 			Pieces.insert(newPieceInstance.piece)
 
-			cropInfinitesOnLayer(rundown, partInstance, newPieceInstance)
-			stopInfinitesRunningOnLayer(rundownPlaylist, rundown, partInstance, newPieceInstance.piece.sourceLayerId)
+			updateInfinitesForNextedPieceInstance(rundownPlaylist, newPieceInstance.piece.sourceLayerId)
 			updateTimeline(rundown.studioId)
 		})
 	}
@@ -188,8 +187,7 @@ export namespace ServerPlayoutAdLibAPI {
 		Pieces.insert(newPieceInstance.piece)
 
 		if (queue) {
-			// Update any infinites
-			updateSourceLayerInfinitesAfterPart(rundown, previousPartInstance!.part)
+			// TODO - somewhere needs to generate the infinites for this partInstance
 
 			setNextPart(rundownPlaylist, partInstance)
 
@@ -198,8 +196,7 @@ export namespace ServerPlayoutAdLibAPI {
 				updateTimeline(rundownPlaylist.studioId)
 			}
 		} else {
-			cropInfinitesOnLayer(rundown, partInstance, newPieceInstance)
-			stopInfinitesRunningOnLayer(rundownPlaylist, rundown, partInstance, newPieceInstance.piece.sourceLayerId)
+			updateInfinitesForNextedPieceInstance(rundownPlaylist, newPieceInstance.piece.sourceLayerId)
 			updateTimeline(rundown.studioId)
 		}
 	}

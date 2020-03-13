@@ -227,7 +227,6 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 			(innerPiece.enable.start !== undefined && innerPiece.enable.end === undefined && innerPiece.enable.duration === undefined)
 		) && !piece.cropped && !innerPiece.playoutDuration && !innerPiece.userDuration) {
 			itemDuration = this.props.partDuration - (piece.renderedInPoint || 0)
-			// console.log(piece.infiniteMode + ', ' + piece.infiniteId)
 		}
 
 		return itemDuration
