@@ -5,7 +5,7 @@ import { Time } from '../../../../lib/lib'
 import { RundownUtils } from '../../../lib/rundown'
 import Moment from 'react-moment'
 
-import { PieceLifespan, NoraContent } from 'tv-automation-sofie-blueprints-integration'
+import { InfiniteMode, NoraContent } from 'tv-automation-sofie-blueprints-integration'
 
 import { FloatingInspector } from '../../FloatingInspector'
 
@@ -54,7 +54,8 @@ export const L3rdSourceRenderer = translate()(class extends CustomLayerItemRende
 	render () {
 		const { t } = this.props
 
-		const innerPiece = this.props.piece.instance.piece
+		const pieceInstance = this.props.piece.instance
+		const innerPiece = pieceInstance.piece
 		const noraContent = innerPiece.content as NoraContent | undefined
 
 		let properties: Array<KeyValue> = []
@@ -128,11 +129,10 @@ export const L3rdSourceRenderer = translate()(class extends CustomLayerItemRende
 										<td className='mini-inspector__row--timing'></td>
 										<td className='mini-inspector__row--timing'>
 											<span className='mini-inspector__in-point'>{RundownUtils.formatTimeToShortTime(this.props.piece.renderedInPoint || 0)}</span>
-											{innerPiece.infiniteMode ?
+											{pieceInstance.infinite ?
 												(
-													(innerPiece.infiniteMode === PieceLifespan.OutOnNextPart && <span className='mini-inspector__duration'>{t('Until next take')}</span>) ||
-													(innerPiece.infiniteMode === PieceLifespan.OutOnNextSegment && <span className='mini-inspector__duration'>{t('Until next segment')}</span>) ||
-													(innerPiece.infiniteMode === PieceLifespan.Infinite && <span className='mini-inspector__duration'>{t('Infinite')}</span>)
+													(pieceInstance.infinite.mode === InfiniteMode.OnSegmentEnd && <span className='mini-inspector__duration'>{t('Until next segment')}</span>) ||
+													(pieceInstance.infinite.mode === InfiniteMode.OnRundownEnd && <span className='mini-inspector__duration'>{t('Until rundown end')}</span>)
 												)
 												: <span className='mini-inspector__duration'>{RundownUtils.formatTimeToShortTime(this.props.piece.renderedDuration || (_.isNumber(innerPiece.enable.duration) ? parseFloat(innerPiece.enable.duration as any as string) : 0))}</span>
 											}

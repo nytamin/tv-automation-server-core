@@ -98,7 +98,7 @@ class SourceLayer extends React.Component<ISourceLayerProps> {
 					: false
 			}))
 			.sortBy((it) => it.renderedInPoint)
-			.sortBy((it) => it.instance.piece.infiniteMode)
+			.sortBy((it) => it.instance.infinite ? it.instance.infinite.mode : undefined)
 			.sortBy((it) => it.cropped)
 			.map((piece) => {
 				return (

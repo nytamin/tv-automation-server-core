@@ -7,7 +7,7 @@ import {
 	PieceUi
 } from './SegmentTimelineContainer'
 import { RundownAPI } from '../../../lib/api/rundown'
-import { SourceLayerType, PieceLifespan, PieceTransitionType } from 'tv-automation-sofie-blueprints-integration'
+import { SourceLayerType, InfiniteMode, PieceTransitionType } from 'tv-automation-sofie-blueprints-integration'
 import { RundownUtils } from '../../lib/rundown'
 import * as ClassNames from 'classnames'
 import { DefaultLayerItemRenderer } from './Renderers/DefaultLayerItemRenderer'
@@ -195,7 +195,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 				let outTransitionDuration = innerPiece.transitions && innerPiece.transitions.outTransition ? innerPiece.transitions.outTransition.duration || 0 : 0
 
 				const inPoint = piece.renderedInPoint || 0
-				const duration = (innerPiece.infiniteMode || piece.renderedDuration === 0) ? (this.props.partDuration - inPoint) : Math.min((piece.renderedDuration || 0), this.props.partDuration - inPoint)
+				const duration = (piece.instance.infinite || piece.renderedDuration === 0) ? (this.props.partDuration - inPoint) : Math.min((piece.renderedDuration || 0), this.props.partDuration - inPoint)
 				const outPoint = inPoint + duration
 
 				// const widthConstrictedMode = this.state.leftAnchoredWidth > 0 && this.state.rightAnchoredWidth > 0 && ((this.state.leftAnchoredWidth + this.state.rightAnchoredWidth) > this.state.elementWidth)
@@ -223,7 +223,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 		let itemDuration = Math.min(innerPiece.playoutDuration || userDurationNumber || piece.renderedDuration || expectedDurationNumber || 0, this.props.partDuration - (piece.renderedInPoint || 0))
 
 		if ((
-			(innerPiece.infiniteMode !== undefined && innerPiece.infiniteMode !== PieceLifespan.Normal) ||
+			piece.instance.infinite ||
 			(innerPiece.enable.start !== undefined && innerPiece.enable.end === undefined && innerPiece.enable.duration === undefined)
 		) && !piece.cropped && !innerPiece.playoutDuration && !innerPiece.userDuration) {
 			itemDuration = this.props.partDuration - (piece.renderedInPoint || 0)
@@ -490,7 +490,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 
 					'hide-overflow-labels': this.state.leftAnchoredWidth > 0 && this.state.rightAnchoredWidth > 0 && ((this.state.leftAnchoredWidth + this.state.rightAnchoredWidth) > this.state.elementWidth),
 
-					'infinite': (innerPiece.playoutDuration === undefined && innerPiece.userDuration === undefined && innerPiece.infiniteMode) as boolean, // 0 is a special value
+					'infinite': !!(innerPiece.playoutDuration === undefined && innerPiece.userDuration === undefined && piece.instance.infinite),
 					'next-is-touching': !!(this.props.piece.cropped || (innerPiece.enable.end && _.isString(innerPiece.enable.end))),
 
 					'source-missing': innerPiece.status === RundownAPI.PieceStatusCode.SOURCE_MISSING || innerPiece.status === RundownAPI.PieceStatusCode.SOURCE_NOT_SET,
