@@ -1,0 +1,681 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Basic Playout check infinites are copied where possible 1`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece000",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece000",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_000",
+      "name": "Piece 000",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece001",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece001",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_001",
+      "name": "Piece 001",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "vt0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece010",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_010",
+      "name": "Piece 010",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9004",
+    "infinite": Object {
+      "infinitePieceId": "randomId9003",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9004",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_0_inf0",
+      "name": "Part 0 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout check infinites are copied where possible 2`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece000",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece000",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_000",
+      "name": "Piece 000",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece001",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece001",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_001",
+      "name": "Piece 001",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "vt0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece010",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece010",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_010",
+      "name": "Piece 010",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9004",
+    "infinite": Object {
+      "infinitePieceId": "randomId9003",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9004",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_0_inf0",
+      "name": "Part 0 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9006",
+    "infinite": Object {
+      "infinitePieceId": "randomId9005",
+      "mode": "rundown-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9006",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf0",
+      "name": "Part 0 1_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9008",
+    "infinite": Object {
+      "infinitePieceId": "randomId9007",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9008",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf1",
+      "name": "Part 0 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout check infinites are copied where possible 3`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9006",
+    "infinite": Object {
+      "infinitePieceId": "randomId9005",
+      "mode": "rundown-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9006",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf0",
+      "name": "Part 0 1_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9008",
+    "infinite": Object {
+      "infinitePieceId": "randomId9007",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9008",
+      "content": "existing-instance",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf1",
+      "name": "Part 0 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part1_0_randomId9022_randomId9010",
+    "infinite": Object {
+      "infinitePieceId": "randomId9009",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part1_0_randomId9022",
+    "piece": Object {
+      "_id": "randomId9010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_1_0_inf0",
+      "name": "Part 1 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part1_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout check infinites are copied where possible 4`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part1_2_randomId9024_randomId9016",
+    "infinite": Object {
+      "infinitePieceId": "randomId9015",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part1_2_randomId9024",
+    "piece": Object {
+      "_id": "randomId9016",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_1_2_inf0",
+      "name": "Part 1 2_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part1_2",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part1_2_randomId9024_randomId9014",
+    "infinite": Object {
+      "infinitePieceId": "randomId9013",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part1_2_randomId9024",
+    "piece": Object {
+      "_id": "randomId9014",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_1_1_inf1",
+      "name": "Part 1 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part1_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout check infinites are copied where possible 5`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_1_randomId9027_randomId9006",
+    "infinite": Object {
+      "infinitePieceId": "randomId9005",
+      "mode": "rundown-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9027",
+    "piece": Object {
+      "_id": "randomId9006",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf0",
+      "name": "Part 0 1_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9027_randomId9008",
+    "infinite": Object {
+      "infinitePieceId": "randomId9007",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9027",
+    "piece": Object {
+      "_id": "randomId9008",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf1",
+      "name": "Part 0 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part1_0_randomId9029_randomId9010",
+    "infinite": Object {
+      "infinitePieceId": "randomId9009",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part1_0_randomId9029",
+    "piece": Object {
+      "_id": "randomId9010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_1_0_inf0",
+      "name": "Part 1 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part1_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout rundown progression 1`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece000",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece000",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_000",
+      "name": "Piece 000",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece001",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece001",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_001",
+      "name": "Piece 001",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "vt0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece010",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_010",
+      "name": "Piece 010",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9004",
+    "infinite": Object {
+      "infinitePieceId": "randomId9003",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9004",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_0_inf0",
+      "name": "Part 0 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout rundown progression 2`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece000",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece000",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_000",
+      "name": "Piece 000",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece001",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece001",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_001",
+      "name": "Piece 001",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "vt0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9002_piece010",
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9002_piece010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PIECE_010",
+      "name": "Piece 010",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "cam0",
+      "status": 0,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_0_randomId9018_randomId9004",
+    "infinite": Object {
+      "infinitePieceId": "randomId9003",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_0_randomId9018",
+    "piece": Object {
+      "_id": "randomId9004",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_0_inf0",
+      "name": "Part 0 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9006",
+    "infinite": Object {
+      "infinitePieceId": "randomId9005",
+      "mode": "rundown-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9006",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf0",
+      "name": "Part 0 1_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9008",
+    "infinite": Object {
+      "infinitePieceId": "randomId9007",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9008",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf1",
+      "name": "Part 0 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;
+
+exports[`Basic Playout rundown progression 3`] = `
+Array [
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9006",
+    "infinite": Object {
+      "infinitePieceId": "randomId9005",
+      "mode": "rundown-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9006",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf0",
+      "name": "Part 0 1_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part0_1_randomId9020_randomId9008",
+    "infinite": Object {
+      "infinitePieceId": "randomId9007",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part0_1_randomId9020",
+    "piece": Object {
+      "_id": "randomId9008",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_0_1_inf1",
+      "name": "Part 0 1_inf1",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part0_1",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf1",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+  Object {
+    "_id": "randomId9002_part1_0_randomId9022_randomId9010",
+    "infinite": Object {
+      "infinitePieceId": "randomId9009",
+      "mode": "segment-end",
+    },
+    "partInstanceId": "randomId9002_part1_0_randomId9022",
+    "piece": Object {
+      "_id": "randomId9010",
+      "enable": Object {
+        "start": 0,
+      },
+      "externalId": "MOCK_PART_1_0_inf0",
+      "name": "Part 1 0_inf0",
+      "outputLayerId": "pgm",
+      "partId": "randomId9002_part1_0",
+      "rundownId": "randomId9002",
+      "sourceLayerId": "inf0",
+      "status": -1,
+    },
+    "rundownId": "randomId9002",
+  },
+]
+`;

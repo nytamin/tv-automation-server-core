@@ -313,6 +313,12 @@ export namespace MongoMock {
 			mockCollections[collectionName] = data
 		}
 	}
+
+	export function deleteAllData() {
+		Object.keys(mockCollections).forEach(id => {
+			mockCollections[id] = {}
+		})
+	}
 }
 export function setup () {
 	return {
