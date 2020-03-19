@@ -26,7 +26,7 @@ import {
 import { TimelineObjGeneric } from '../../../lib/collections/Timeline'
 import { loadCachedIngestSegment } from '../ingest/ingestCache'
 import { updateSegmentsFromIngestData } from '../ingest/rundownInput'
-import { updateSourceLayerInfinitesAfterPart, getInfinitesForPart, getInfinitePiecesToCopy } from './infinites'
+import { updateSourceLayerInfinitesAfterPart, getInfinitesStillRunningForPart, getInfinitePiecesToCopy } from './infinites'
 import { Studios } from '../../../lib/collections/Studios'
 import { DBSegment, Segments } from '../../../lib/collections/Segments'
 import { RundownPlaylist, RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
@@ -458,7 +458,7 @@ export function setNextPart (
 			const rundown = Rundowns.findOne(nextPart.rundownId)!
 			const showStyleBase = rundown.getShowStyleBase()
 			const segment = Segments.findOne(nextPart.segmentId)!
-			const infinites = getInfinitesForPart(showStyleBase, acceptableRundowns, rundown, segment, nextPart)
+			const infinites = getInfinitesStillRunningForPart(showStyleBase, acceptableRundowns, rundown, segment, nextPart)
 			const infinitesToCopy = getInfinitePiecesToCopy(rundownPlaylist.currentPartInstanceId, infinites)
 
 			// Copy existing infinites

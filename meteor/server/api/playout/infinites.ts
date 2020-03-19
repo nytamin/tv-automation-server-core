@@ -52,7 +52,7 @@ export function getInfinitePiecesToCopy(previousPartInstanceId: PartInstanceId |
 	return result
 }
 
-export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: RundownId[], rundown: DBRundown, segment: DBSegment, part: DBPart): Piece[] {
+export function getInfinitesStillRunningForPart(showStyleBase: DBShowStyleBase, rundownIds: RundownId[], rundown: DBRundown, segment: DBSegment, part: DBPart): Piece[] {
 	// if (!segment0 || segment0._id !== part.segmentId) {
 	// 	segment0 = Segments.findOne(part.segmentId)
 	// }

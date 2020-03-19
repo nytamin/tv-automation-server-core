@@ -8,12 +8,11 @@ import { ShowStyleBase, ShowStyleBases, DBShowStyleBase } from '../../../../lib/
 import { Rundowns, RundownId, DBRundown } from '../../../../lib/collections/Rundowns';
 import { Segments, SegmentId, DBSegment } from '../../../../lib/collections/Segments';
 import { Parts, PartId, DBPart } from '../../../../lib/collections/Parts';
-import { InfinitePieces, InfinitePieceId, InfinitePieceInner } from '../../../../lib/collections/InfinitePiece';
 import { protectString, literal } from '../../../../lib/lib';
 import { RundownPlaylistId } from '../../../../lib/collections/RundownPlaylists';
-import { Piece } from '../../../../lib/collections/Pieces';
-import { InfiniteMode, SourceLayerType } from 'tv-automation-sofie-blueprints-integration';
-import { getInfinitesForPart } from '../infinites';
+import { Piece, PieceId, Pieces } from '../../../../lib/collections/Pieces';
+import { PieceLifespan, SourceLayerType } from 'tv-automation-sofie-blueprints-integration';
+import { getInfinitesStillRunningForPart } from '../infinites';
 
 const Ids = {
 	playlist: protectString<RundownPlaylistId>('playlist0'),
@@ -54,7 +53,7 @@ const Ids = {
 	part1_1_1: protectString<PartId>('part1_1_1'),
 	part1_1_1Rank: 1,
 
-	infiniteInOtherPlaylist: protectString<InfinitePieceId>('infinite-in-other-playlist')
+	infiniteInOtherPlaylist: protectString<PieceId>('infinite-in-other-playlist')
 }
 const rundownIds = [Ids.rundown0, Ids.rundown1]
 const Fakes = {
@@ -155,10 +154,10 @@ function setupBaseMockInfinitesRundown() {
 	// Rundowns.remove({})
 	// Segments.remove({})
 	// Parts.remove({})
-	InfinitePieces.remove({ _id: { $exists: true } })
+	Pieces.remove({ _id: { $exists: true } })
 
 	// Insert new infinites
-	InfinitePieces.insert({
+	Pieces.insert({
 		// This should never be seen, but exists to ensure we don't get data bleed from other playlists
 		_id: Ids.infiniteInOtherPlaylist,
 		startRundownId: protectString<RundownId>('bad-rundown'),
@@ -168,28 +167,14 @@ function setupBaseMockInfinitesRundown() {
 		startPartId: protectString<PartId>('bad-part'),
 		startPartRank: 0,
 
-		piece: literal<Partial<InfinitePieceInner>>({
-			infiniteMode: InfiniteMode.OnRundownEnd,
-			sourceLayerId: 'bad-layer',
-			enable: { start: 0 }
-		}) as any
+		externalId: '',
+		status: 0,
+		name: '',
+		lifespan: PieceLifespan.OutOnRundownEnd,
+		sourceLayerId: 'bad-layer',
+		outputLayerId: 'pgm',
+		enable: { start: 0 }
 	})
-
-	// InfinitePieces.insert({
-	// 	_id: protectString('rundown-end0'),
-	// 	startRundownId: Ids.rundown0,
-	// 	startRundownRank: 0,
-	// 	startSegmentId: Ids.segment0_0,
-	// 	startSegmentRank: 0,
-	// 	startPartId: Ids.part0_0_0,
-	// 	startPartRank: 0,
-
-	// 	piece: literal<Partial<InfinitePieceInner>>({
-	// 		infiniteMode: InfiniteMode.OnRundownEnd,
-	// 		sourceLayerId: 'Layer0',
-	// 		enable: { start: 0 }
-	// 	}) as any
-	// })
 }
 
 describe('Infinites Calculations', () => {
@@ -198,7 +183,7 @@ describe('Infinites Calculations', () => {
 	})
 	testInFiber('OnRundownEnd isolated lifetime', () => {
 		const id = protectString('infinite0')
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
@@ -207,43 +192,46 @@ describe('Infinites Calculations', () => {
 			startPartId: Ids.part0_0_1,
 			startPartRank: Ids.part0_0_1Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnRundownEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
 
 		{
-			// Should not be running yet
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			// Origin part
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
 			expect(result).toHaveLength(0)
+			// expect(result[0]._id).toEqual(id)
 		}
 
 		{
-			// Origin part
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			// Following part
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_2)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id)
 		}
 
 		{
 			// Still going in last of rundown
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_2, Fakes.part0_2_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_2, Fakes.part0_2_0)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id)
 		}
 
 		{
 			// Clear on next rundown
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown1, Fakes.segment1_0, Fakes.part1_0_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown1, Fakes.segment1_0, Fakes.part1_0_0)
 			expect(result).toHaveLength(0)
 		}
 	})
 	testInFiber('OnRundownEnd stops another', () => {
 		const id0 = protectString('infinite0')
 		const id1 = protectString('infinite1')
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id0,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
@@ -252,13 +240,15 @@ describe('Infinites Calculations', () => {
 			startPartId: Ids.part0_0_0,
 			startPartRank: Ids.part0_0_0Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnRundownEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id1,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
@@ -267,81 +257,92 @@ describe('Infinites Calculations', () => {
 			startPartId: Ids.part0_1_0,
 			startPartRank: Ids.part0_1_0Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnRundownEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
 
 		{
-			// Origin part
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			// First starts
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			expect(result).toHaveLength(1)
+			expect(result[0]._id).toEqual(id0)
+		}
+
+		{
+			// Second origin (first should still be present)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id0)
 		}
 
 		{
 			// Second takes over
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_1)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id1)
 		}
 
 		{
 			// Clear on next rundown
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown1, Fakes.segment1_0, Fakes.part1_0_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown1, Fakes.segment1_0, Fakes.part1_0_0)
 			expect(result).toHaveLength(0)
 		}
 	})
 	testInFiber('OnSegmentEnd isolated lifetime', () => {
 		const id = protectString('infinite0')
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
 			startSegmentId: Ids.segment0_0,
 			startSegmentRank: Ids.segment0_0Rank,
-			startPartId: Ids.part0_0_1,
-			startPartRank: Ids.part0_0_1Rank,
+			startPartId: Ids.part0_0_0,
+			startPartRank: Ids.part0_0_0Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnSegmentEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnSegmentEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
 
 		{
-			// Should not be running yet
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			// Origin part (Should not be running yet)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
 			expect(result).toHaveLength(0)
 		}
 
 		{
-			// Origin part
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			// Next part (starts reporting)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id)
 		}
 
 		{
 			// Still going in last of segment
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_2)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_2)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id)
 		}
 
 		{
 			// Clear on next segment
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
 			expect(result).toHaveLength(0)
 		}
 	})
 	testInFiber('OnSegmentEnd stops OnRundownEnd', () => {
 		const id0 = protectString('infinite0')
 		const id1 = protectString('infinite1')
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id0,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
@@ -350,13 +351,15 @@ describe('Infinites Calculations', () => {
 			startPartId: Ids.part0_0_0,
 			startPartRank: Ids.part0_0_0Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnRundownEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
-		InfinitePieces.insert({
+		Pieces.insert({
 			_id: id1,
 			startRundownId: Ids.rundown0,
 			startRundownRank: Ids.rundown0Rank,
@@ -365,30 +368,115 @@ describe('Infinites Calculations', () => {
 			startPartId: Ids.part0_1_0,
 			startPartRank: Ids.part0_1_0Rank,
 	
-			piece: literal<Partial<InfinitePieceInner>>({
-				infiniteMode: InfiniteMode.OnSegmentEnd,
-				sourceLayerId: 'layer0',
-				enable: { start: 0 }
-			}) as any
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnSegmentEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
 		})
 
 		{
-			// Origin part
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			// Origin part (Should not be running yet)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			expect(result).toHaveLength(0)
+		}
+
+		{
+			// Next part (starts reporting)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			expect(result).toHaveLength(1)
+			expect(result[0]._id).toEqual(id0)
+		}
+
+		{
+			// Second start (Should not be running yet)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id0)
 		}
 
 		{
 			// Second takes over
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_1)
 			expect(result).toHaveLength(1)
 			expect(result[0]._id).toEqual(id1)
 		}
 
 		{
 			// Clear on next segment
-			const result = getInfinitesForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_2, Fakes.part0_2_0)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_2, Fakes.part0_2_0)
+			expect(result).toHaveLength(0)
+		}
+	})
+	testInFiber('Normal stops OnRundownEnd', () => {
+		const id0 = protectString('infinite0')
+		const id1 = protectString('infinite1')
+		Pieces.insert({
+			_id: id0,
+			startRundownId: Ids.rundown0,
+			startRundownRank: Ids.rundown0Rank,
+			startSegmentId: Ids.segment0_0,
+			startSegmentRank: Ids.segment0_0Rank,
+			startPartId: Ids.part0_0_0,
+			startPartRank: Ids.part0_0_0Rank,
+	
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
+		})
+		Pieces.insert({
+			_id: id1,
+			startRundownId: Ids.rundown0,
+			startRundownRank: Ids.rundown0Rank,
+			startSegmentId: Ids.segment0_1,
+			startSegmentRank: Ids.segment0_1Rank,
+			startPartId: Ids.part0_1_0,
+			startPartRank: Ids.part0_1_0Rank,
+	
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.WithinPart,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 }
+		})
+
+		{
+			// Origin part (Should not be running yet)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_0)
+			expect(result).toHaveLength(0)
+		}
+
+		{
+			// Next part (starts reporting)
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			expect(result).toHaveLength(1)
+			expect(result[0]._id).toEqual(id0)
+		}
+
+		{
+			// Normal piece plays
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_0)
+			expect(result).toHaveLength(1)
+			expect(result[0]._id).toEqual(id0)
+		}
+
+		{
+			// Normal piece gone
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_1, Fakes.part0_1_1)
+			expect(result).toHaveLength(0)
+		}
+
+		{
+			// Clear on next segment
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_2, Fakes.part0_2_0)
 			expect(result).toHaveLength(0)
 		}
 	})
