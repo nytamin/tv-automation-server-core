@@ -7,7 +7,7 @@ import { getCurrentTime, literal, protectString, unprotectString, getRandomId } 
 import { logger } from '../../../lib/logging'
 import { Rundowns, RundownHoldState, Rundown } from '../../../lib/collections/Rundowns'
 import { TimelineObjGeneric, TimelineObjType } from '../../../lib/collections/Timeline'
-import { AdLibPieces, AdLibPiece } from '../../../lib/collections/AdLibPieces'
+import { AdLibPieces, AdLibPiece, AdLibPieceGeneric } from '../../../lib/collections/AdLibPieces'
 import { RundownBaselineAdLibPieces } from '../../../lib/collections/RundownBaselineAdLibPieces'
 import { RundownPlaylists, RundownPlaylist, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
 import { Pieces, Piece, PieceId } from '../../../lib/collections/Pieces'
@@ -158,7 +158,7 @@ export namespace ServerPlayoutAdLibAPI {
 			innerStartAdLibPiece(rundownPlaylist, rundown, queue, partInstanceId, adLibPiece)
 		})
 	}
-	function innerStartAdLibPiece (rundownPlaylist: RundownPlaylist, rundown: Rundown, queue: boolean, partInstanceId0: PartInstanceId, adLibPiece: AdLibPiece) {
+	function innerStartAdLibPiece (rundownPlaylist: RundownPlaylist, rundown: Rundown, queue: boolean, partInstanceId0: PartInstanceId, adLibPiece: AdLibPieceGeneric) {
 		if (adLibPiece.toBeQueued) {
 			// Allow adlib to request to always be queued
 			queue = true
@@ -200,7 +200,7 @@ export namespace ServerPlayoutAdLibAPI {
 			updateTimeline(rundown.studioId)
 		}
 	}
-	function adlibQueueInsertPartInstance (rundownPlaylist: RundownPlaylist, rundown: Rundown, afterPartInstance: PartInstance, adLibPiece: AdLibPiece): PartInstanceId {
+	function adlibQueueInsertPartInstance (rundownPlaylist: RundownPlaylist, rundown: Rundown, afterPartInstance: PartInstance, adLibPiece: AdLibPieceGeneric): PartInstanceId {
 		logger.info('adlibQueueInsertPartInstance')
 
 		// check if there's already a queued part after this:

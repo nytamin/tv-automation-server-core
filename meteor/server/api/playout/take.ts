@@ -47,7 +47,7 @@ function completeHold(playlist: RundownPlaylist, rundownData: RundownPlaylistPla
 		}))
 		// TODO-PartInstance - pending new data flow
 		ps.push(asyncCollectionRemove(Pieces, {
-			partId: currentPartInstance.part._id,
+			startPartId: currentPartInstance.part._id,
 			extendOnHold: true,
 			dynamicallyInserted: true
 		}))
@@ -69,7 +69,7 @@ function completeHold(playlist: RundownPlaylist, rundownData: RundownPlaylistPla
 		}, { multi: true }))
 		// TODO-PartInstance - pending new data flow
 		ps.push(asyncCollectionUpdate(Pieces, {
-			partId: previousPartInstance.part._id,
+			startPartId: previousPartInstance.part._id,
 			extendOnHold: true,
 			dynamicallyInserted: false
 		}, {
@@ -394,7 +394,8 @@ function copyOverflowingPieces (playoutData: RundownPlaylistPlayoutData, current
 						piece: {
 							..._.omit(instance.piece, 'startedPlayback', 'duration', 'overflows'),
 							_id: getRandomId(),
-							partId: nextPartInstance.part._id,
+							startPartId: nextPartInstance.part._id,
+							startPartRank: nextPartInstance.part._rank,
 							enable: {
 								start: 0,
 								duration: remainingDuration,

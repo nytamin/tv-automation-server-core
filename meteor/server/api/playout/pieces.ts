@@ -22,7 +22,7 @@ import {
 	TSR
 } from 'tv-automation-sofie-blueprints-integration'
 import { transformTimeline } from '../../../lib/timeline'
-import { AdLibPiece } from '../../../lib/collections/AdLibPieces'
+import { AdLibPiece, AdLibPieceGeneric } from '../../../lib/collections/AdLibPieces'
 import { Random } from 'meteor/random'
 import { prefixAllObjectIds } from './lib'
 import { RundownPlaylistPlayoutData } from '../../../lib/collections/RundownPlaylists'
@@ -303,7 +303,7 @@ export function convertPieceToAdLibPiece (piece: Piece): AdLibPiece {
 	return newAdLibPiece
 }
 
-export function convertAdLibToPieceInstance (adLibPiece: AdLibPiece | Piece, partInstance: PartInstance, queue: boolean): PieceInstance {
+export function convertAdLibToPieceInstance (adLibPiece: AdLibPieceGeneric | Piece, partInstance: PartInstance, queue: boolean): PieceInstance {
 	let duration: number | string | undefined = undefined
 	if (adLibPiece['expectedDuration']) {
 		duration = adLibPiece['expectedDuration']

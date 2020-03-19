@@ -337,7 +337,7 @@ export class RundownPlaylist implements DBRundownPlaylist {
 		])
 
 		const pSegmentsAndParts = this.getSegmentsAndParts(rundowns)
-		const pPieces = asyncCollectionFindFetch(Pieces, { rundownId: { $in: rundownIds } })
+		const pPieces = asyncCollectionFindFetch(Pieces, { startRundownId: { $in: rundownIds } })
 		const pSelectedInstancePieces = asyncCollectionFindFetch(PieceInstances, {
 			rundownId: { $in: rundownIds },
 			partInstanceId: { $in: partInstanceIds }

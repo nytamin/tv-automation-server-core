@@ -188,7 +188,7 @@ export function findLookaheadForlayer (
 	// have pieces grouped by part, so we can look based on rank to choose the correct one
 	const piecesUsingLayerByPart: {[partId: string]: Piece[] | undefined} = {}
 	piecesUsingLayer.forEach(i => {
-		const partId = unprotectString(i.partId)
+		const partId = unprotectString(i.startPartId)
 		if (!piecesUsingLayerByPart[partId]) {
 			piecesUsingLayerByPart[partId] = []
 		}
@@ -259,7 +259,8 @@ function findObjectsForPart (
 		// Only one, just return it
 		return allObjs
 	} else { // They need to be ordered
-		const orderedItems = sortPiecesByStart(playoutData.pieces.filter(p => p.partId === partInfo.part._id))
+		// TODO - this needs to consider infinites properly...
+		const orderedItems = sortPiecesByStart(playoutData.pieces.filter(p => p.startPartId === partInfo.part._id))
 
 		let allowTransition = false
 		let classesFromPreviousPart: string[] = []

@@ -260,7 +260,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStatus: Wrong ro for part', () => {
@@ -340,7 +340,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryInsert: New segment', () => {
@@ -380,7 +380,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryInsert: Invalid previous id', () => {
@@ -485,7 +485,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 	testInFiber('mosRoStoryReplace: Unknown ID', () => {
 		const rundown = Rundowns.findOne() as Rundown
@@ -544,7 +544,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryDelete: Remove invalid id', () => {
@@ -590,7 +590,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoFullStory: Unknown Part', () => {
@@ -661,7 +661,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStorySwap: With first in same segment', () => {
@@ -697,7 +697,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStorySwap: Swap with self', () => {
@@ -776,7 +776,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStorySwap: Swap across segments2', () => {
@@ -805,7 +805,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryMove: Within segment', () => {
@@ -838,7 +838,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryMove: Move whole segment to end', () => {
@@ -875,7 +875,7 @@ describe('Test recieved mos ingest payloads', () => {
 		expect(fixSnapshot(Rundowns.findOne(rundown._id), true)).toMatchSnapshot()
 		expect(fixSnapshot(Segments.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 		expect(fixSnapshot(Parts.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
-		expect(fixSnapshot(Pieces.find({ rundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
+		expect(fixSnapshot(Pieces.find({ startRundownId: rundown._id }).fetch(), true)).toMatchSnapshot()
 	})
 
 	testInFiber('mosRoStoryMove: Invalid before ID', () => {

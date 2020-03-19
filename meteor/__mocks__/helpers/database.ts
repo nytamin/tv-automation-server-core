@@ -497,8 +497,12 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 			const piece000: Piece = {
 				_id: protectString(rundownId + '_piece000'),
 				externalId: 'MOCK_PIECE_000',
-				rundownId: rundown._id,
-				partId: part00._id,
+				startRundownId: rundown._id,
+				startRundownRank: rundown._rank,
+				startSegmentId: segment0._id,
+				startSegmentRank: segment0._rank,
+				startPartId: part00._id,
+				startPartRank: part00._rank,
 				name: 'Piece 000',
 				status: RundownAPI.PieceStatusCode.OK,
 				enable: {
@@ -513,8 +517,12 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 			const piece001: Piece = {
 				_id: protectString(rundownId + '_piece001'),
 				externalId: 'MOCK_PIECE_001',
-				rundownId: rundown._id,
-				partId: part00._id,
+				startRundownId: rundown._id,
+				startRundownRank: rundown._rank,
+				startSegmentId: segment0._id,
+				startSegmentRank: segment0._rank,
+				startPartId: part00._id,
+				startPartRank: part00._rank,
 				name: 'Piece 001',
 				status: RundownAPI.PieceStatusCode.OK,
 				enable: {
@@ -530,7 +538,7 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 				_id: protectString(rundownId + '_adLib000'),
 				_rank: 0,
 				expectedDuration: 1000,
-				lifespan: PieceLifespan.WithinPart
+				lifespan: PieceLifespan.WithinPart,
 				externalId: 'MOCK_ADLIB_000',
 				partId: part00._id,
 				disabled: false,
@@ -557,8 +565,12 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 			const piece010: Piece = {
 				_id: protectString(rundownId + '_piece010'),
 				externalId: 'MOCK_PIECE_010',
-				rundownId: rundown._id,
-				partId: part00._id,
+				startRundownId: rundown._id,
+				startRundownRank: rundown._rank,
+				startSegmentId: segment0._id,
+				startSegmentRank: segment0._rank,
+				startPartId: part01._id,
+				startPartRank: part01._rank,
 				name: 'Piece 010',
 				status: RundownAPI.PieceStatusCode.OK,
 				enable: {

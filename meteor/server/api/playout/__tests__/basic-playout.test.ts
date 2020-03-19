@@ -12,13 +12,12 @@ import { deactivate } from '../../userActions'
 import { RundownPlaylists, RundownPlaylist } from '../../../../lib/collections/RundownPlaylists'
 import { PeripheralDevice } from '../../../../lib/collections/PeripheralDevices'
 import { PeripheralDeviceCommands } from '../../../../lib/collections/PeripheralDeviceCommands'
-import { Pieces, Piece } from '../../../../lib/collections/Pieces'
+import { Pieces, Piece, PieceId } from '../../../../lib/collections/Pieces'
 import { AdLibPieces } from '../../../../lib/collections/AdLibPieces'
 import { PeripheralDeviceAPI } from '../../../../lib/api/peripheralDevice'
-import { InfinitePieces, InfinitePieceInner, InfinitePieceId } from '../../../../lib/collections/InfinitePiece';
 import { getRandomId, literal } from '../../../../lib/lib';
 import { Segment } from '../../../../lib/collections/Segments';
-import { InfiniteMode, SourceLayerType } from 'tv-automation-sofie-blueprints-integration';
+import { PieceLifespan, SourceLayerType } from 'tv-automation-sofie-blueprints-integration';
 import { Part } from '../../../../lib/collections/Parts';
 import { PieceInstances, PieceInstanceId, PieceInstance } from '../../../../lib/collections/PieceInstances';
 import { PartInstanceId } from '../../../../lib/collections/PartInstances';
@@ -28,9 +27,9 @@ import * as _ from 'underscore';
 
 const Timeline = mockupCollection(OrgTimeline)
 
-function createBasicInfinitePiece(rundown: Rundown, part: Part, sourceLayerId: string, suffix: string, mode?: InfiniteMode) {
+function createBasicInfinitePiece(rundown: Rundown, part: Part, sourceLayerId: string, suffix: string, mode?: PieceLifespan) {
 	const segment = part.getSegment() as Segment
-	InfinitePieces.insert({
+	Pieces.insert({
 		_id: getRandomId(),
 		startRundownId: rundown._id,
 		startRundownRank: rundown._rank,
@@ -38,18 +37,14 @@ function createBasicInfinitePiece(rundown: Rundown, part: Part, sourceLayerId: s
 		startSegmentRank: segment._rank,
 		startPartId: part._id,
 		startPartRank: part._rank,
-		piece: literal<InfinitePieceInner>({
-			_id: getRandomId(),
-			partId: undefined,
-			externalId: `${part.externalId}_${suffix}`,
-			rundownId: rundown._id,
-			status: -1,
-			name: `${part.title}_${suffix}`,
-			sourceLayerId,
-			outputLayerId: 'pgm',
-			infiniteMode: mode || InfiniteMode.OnSegmentEnd,
-			enable: { start: 0 }
-		})
+
+		externalId: `${part.externalId}_${suffix}`,
+		status: -1,
+		name: `${part.title}_${suffix}`,
+		sourceLayerId,
+		outputLayerId: 'pgm',
+		lifespan: mode || PieceLifespan.OutOnSegmentEnd,
+		enable: { start: 0 }
 	})
 }
 
@@ -78,14 +73,14 @@ function setupSomeInfinites(showStyleBaseId: ShowStyleBaseId, rundown: Rundown) 
 
 	// Create some infinite pieces to use
 	rundown.getParts().forEach(part => {
-		createBasicInfinitePiece(rundown, part, 'inf0', 'inf0', part._rank === 1 ? InfiniteMode.OnRundownEnd : InfiniteMode.OnSegmentEnd)
+		createBasicInfinitePiece(rundown, part, 'inf0', 'inf0', part._rank === 1 ? PieceLifespan.OutOnRundownEnd : PieceLifespan.OutOnSegmentEnd)
 		if (part._rank === 1) {
 			createBasicInfinitePiece(rundown, part, 'inf1', 'inf1')
 		}
 	})
 
 	// Check we got the right number of infinites before starting
-	expect(InfinitePieces.find({ startRundownId: rundown._id }).count()).toEqual(7)
+	expect(Pieces.find({ startRundownId: rundown._id }).count()).toEqual(10) // 7 + 3
 }
 
 describe('Basic Playout', () => {
@@ -231,7 +226,7 @@ describe('Basic Playout', () => {
 			rehearsal: false
 		})
 
-		let lastInfiniteIds: InfinitePieceId[] = []
+		let lastInfiniteIds: PieceId[] = []
 		const checkPieceInstancesAreCopiedInfinitesWhenPossible = (partInstanceId: PartInstanceId | null) => {
 			if (partInstanceId) {
 				const pieceInstances = getPieceInstances(partInstanceId)

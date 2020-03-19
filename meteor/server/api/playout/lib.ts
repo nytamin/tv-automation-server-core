@@ -33,6 +33,7 @@ import { RundownPlaylist, RundownPlaylists } from '../../../lib/collections/Rund
 import { PartInstance, PartInstances, DBPartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { PieceInstances, PieceInstance, wrapPieceToInstance } from '../../../lib/collections/PieceInstances'
 import { ShowStyleBases } from '../../../lib/collections/ShowStyleBases';
+import { PieceLifespan } from 'tv-automation-sofie-blueprints-integration';
 
 /**
  * Reset the rundown:
@@ -93,7 +94,7 @@ export function resetRundown (rundown: Rundown) {
 
 	// // Reset any pieces that were modified by inserted adlibs
 	// Pieces.update({
-	// 	rundownId: rundown._id,
+	// 	startRundownId: rundown._id,
 	// 	originalInfiniteMode: { $exists: true }
 	// }, {
 	// 	$rename: {
@@ -226,7 +227,7 @@ export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
 
 	// // Reset any pieces that were modified by inserted adlibs
 	// Pieces.update({
-	// 	rundownId: {
+	// 	startRundownId: {
 	// 		$in: rundownIDs
 	// 	},
 	// 	originalInfiniteMode: { $exists: true }
@@ -436,10 +437,21 @@ export function setNextPart (
 			}))
 
 			const rawPieces = Pieces.find({
-				rundownId: nextPart.rundownId,
-				partId: nextPart._id
+				startRundownId: nextPart.rundownId,
+				startPartId: nextPart._id
 			}).fetch()
-			const pieceInstances = _.map(rawPieces, piece => wrapPieceToInstance(piece, newInstanceId))
+			const pieceInstances = _.map(rawPieces, piece => {
+				const instance = wrapPieceToInstance(piece, newInstanceId)
+
+				if (piece.lifespan && piece.lifespan !== PieceLifespan.WithinPart) {
+					// Start of an infinite, so set it up as an infinite
+					instance.infinite = {
+						infinitePieceId: piece._id
+					}
+				}
+
+				return instance
+			})
 
 			// Find all the infinites for this new partInstance
 			// TODO - tidy this up
@@ -577,7 +589,7 @@ function resetPart (part: DBPart): Promise<void> {
 	}))
 	ps.push(asyncCollectionUpdate(Pieces, {
 		// rundownId: part.rundownId,
-		partId: part._id
+		startPartId: part._id
 	}, {
 		$unset: {
 			startedPlayback: 1,
@@ -597,15 +609,15 @@ function resetPart (part: DBPart): Promise<void> {
 
 	// Remove all pieces that have been dynamically created (such as adLib pieces)
 	ps.push(asyncCollectionRemove(Pieces, {
-		rundownId: part.rundownId,
-		partId: part._id,
+		startRundownId: part.rundownId,
+		startPartId: part._id,
 		dynamicallyInserted: true
 	}))
 
 	// // Reset any pieces that were modified by inserted adlibs
 	// ps.push(asyncCollectionUpdate(Pieces, {
-	// 	rundownId: part.rundownId,
-	// 	partId: part._id,
+	// 	startRundownId: part.rundownId,
+	// 	startPartId: part._id,
 	// 	originalInfiniteMode: { $exists: true }
 	// }, {
 	// 	$rename: {

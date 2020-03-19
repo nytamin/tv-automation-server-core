@@ -18,13 +18,12 @@ export enum PieceType {
 
 // TODO-PartInstance generate these for when the part has no need, but the instance still references something
 
-function generateExpectedMediaItems (rundownId: RundownId, studioId: StudioId, piece: PieceGeneric, pieceType: string): ExpectedMediaItem[] {
+function generateExpectedMediaItems (rundownId: RundownId, studioId: StudioId, partId: PartId, piece: PieceGeneric, pieceType: string): ExpectedMediaItem[] {
 	const result: ExpectedMediaItem[] = []
 
-	if (piece.content && piece.content.fileName && piece.content.path && piece.content.mediaFlowIds && piece.partId) {
-		const partId = piece.partId;
+	if (piece.content && piece.content.fileName && piece.content.path && piece.content.mediaFlowIds) {
 		(piece.content.mediaFlowIds as string[]).forEach(function (flow) {
-			const id = protectString<ExpectedMediaItemId>(getHash(pieceType + '_' + piece._id + '_' + flow + '_' + rundownId + '_' + piece.partId))
+			const id = protectString<ExpectedMediaItemId>(getHash(pieceType + '_' + piece._id + '_' + flow + '_' + rundownId + '_' + partId))
 			result.push({
 				_id: id,
 				label: piece.name,
@@ -59,7 +58,7 @@ export const updateExpectedMediaItemsOnRundown: (rundownId: RundownId) => void
 	const studioId = rundown.studioId
 
 	const pieces = Pieces.find({
-		rundownId: rundown._id
+		startRundownId: rundown._id
 	}).fetch()
 	const adlibs = AdLibPieces.find({
 		rundownId: rundown._id
@@ -67,12 +66,12 @@ export const updateExpectedMediaItemsOnRundown: (rundownId: RundownId) => void
 
 	const eMIs: ExpectedMediaItem[] = []
 
-	function iterateOnPieceLike (piece: PieceGeneric, pieceType: string) {
-		eMIs.push(...generateExpectedMediaItems(rundownId, studioId, piece, pieceType))
+	function iterateOnPieceLike (piece: PieceGeneric, partId: PartId, pieceType: string) {
+		eMIs.push(...generateExpectedMediaItems(rundownId, studioId, partId, piece, pieceType))
 	}
 
-	pieces.forEach((doc) => iterateOnPieceLike(doc, PieceType.PIECE))
-	adlibs.forEach((doc) => iterateOnPieceLike(doc, PieceType.ADLIB))
+	pieces.forEach((doc) => iterateOnPieceLike(doc, doc.startPartId, PieceType.PIECE))
+	adlibs.forEach((doc) => iterateOnPieceLike(doc, doc.partId, PieceType.ADLIB))
 
 	saveIntoDb<ExpectedMediaItem, ExpectedMediaItem>(ExpectedMediaItems, {
 		rundownId: rundown._id
@@ -107,20 +106,20 @@ export const updateExpectedMediaItemsOnPart: (rundownId: RundownId, partId: Part
 	const eMIs: ExpectedMediaItem[] = []
 
 	const pieces = Pieces.find({
-		rundownId: rundown._id,
-		partId: part._id
+		startRundownId: rundown._id,
+		startPartId: part._id
 	}).fetch()
 	const adlibs = AdLibPieces.find({
 		rundownId: rundown._id,
 		partId: part._id
 	}).fetch()
 
-	function iterateOnPieceLike (piece: PieceGeneric, pieceType: string) {
-		eMIs.push(...generateExpectedMediaItems(rundownId, studioId, piece, pieceType))
+	function iterateOnPieceLike (piece: PieceGeneric, partId: PartId, pieceType: string) {
+		eMIs.push(...generateExpectedMediaItems(rundownId, studioId, partId, piece, pieceType))
 	}
 
-	pieces.forEach((doc) => iterateOnPieceLike(doc, PieceType.PIECE))
-	adlibs.forEach((doc) => iterateOnPieceLike(doc, PieceType.ADLIB))
+	pieces.forEach((doc) => iterateOnPieceLike(doc, doc.startPartId, PieceType.PIECE))
+	adlibs.forEach((doc) => iterateOnPieceLike(doc, doc.partId, PieceType.ADLIB))
 
 	saveIntoDb<ExpectedMediaItem, ExpectedMediaItem>(ExpectedMediaItems, {
 		rundownId: rundown._id,

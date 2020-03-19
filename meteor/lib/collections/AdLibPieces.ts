@@ -7,17 +7,20 @@ import { createMongoCollection } from './lib'
 import { RundownId } from './Rundowns';
 import { PartId } from './Parts';
 
-export interface AdLibPiece extends PieceGeneric, IBlueprintAdLibPiece {
-	/** The rundown this piece belongs to */
-	rundownId: RundownId
-	/** The Part this piece belongs to */
-	partId?: PartId
-
+export interface AdLibPieceGeneric extends PieceGeneric, IBlueprintAdLibPiece {
 	/** The object describing the piece in detail */
 	content?: BaseContent // TODO: Temporary, should be put into IBlueprintAdLibPiece
 
 	// trigger: undefined
 	disabled: false
+}
+
+export interface AdLibPiece extends AdLibPieceGeneric {
+	/** The rundown this piece belongs to */
+	rundownId: RundownId
+
+	/** The Part this piece belongs to */
+	partId: PartId
 }
 export const AdLibPieces: TransformedCollection<AdLibPiece, AdLibPiece>
 	= createMongoCollection<AdLibPiece>('adLibPieces')

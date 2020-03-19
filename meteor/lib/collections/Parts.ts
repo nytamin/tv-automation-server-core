@@ -140,8 +140,8 @@ export class Part implements DBPart {
 		options = options || {}
 		return Pieces.find(
 			_.extend({
-				rundownId: this.rundownId,
-				partId: this._id
+				startRundownId: this.rundownId,
+				startPartId: this._id
 			}, selector),
 			_.extend({
 				sort: { _rank: 1 }

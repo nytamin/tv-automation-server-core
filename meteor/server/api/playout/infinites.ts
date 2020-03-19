@@ -66,7 +66,7 @@ export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: 
 		lifespan: PieceLifespan.OutOnSegmentEnd,
 		startRundownId: part.rundownId,
 		startSegmentId: part.segmentId,
-		startPartRank: { $lte: part._rank }
+		startPartRank: { $lt: part._rank }
 	}, {
 		sort: {
 			startRundownRank: -1,
@@ -91,7 +91,7 @@ export function getInfinitesForPart(showStyleBase: DBShowStyleBase, rundownIds: 
 					// same segment, and same/previous part
 					startRundownId: part.rundownId,
 					startSegmentId: part.segmentId,
-					startPartRank: { $lte: part._rank }
+					startPartRank: { $lt: part._rank }
 				},
 				{
 					// same rundown, and previous segment

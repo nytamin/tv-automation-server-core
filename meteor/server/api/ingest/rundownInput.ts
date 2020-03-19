@@ -49,7 +49,7 @@ import { ShowStyleContext, RundownContext, SegmentContext, NotesContext } from '
 import { Blueprints, Blueprint, BlueprintId } from '../../../lib/collections/Blueprints'
 import { RundownBaselineObj, RundownBaselineObjs, RundownBaselineObjId } from '../../../lib/collections/RundownBaselineObjs'
 import { Random } from 'meteor/random'
-import { postProcessRundownBaselineItems, postProcessAdLibPieces, postProcessPieces } from '../blueprints/postProcess'
+import { postProcessRundownBaselineItems, postProcessAdLibPieces, postProcessPieces, postProcessBaselineAdLibPieces } from '../blueprints/postProcess'
 import { RundownBaselineAdLibItem, RundownBaselineAdLibPieces } from '../../../lib/collections/RundownBaselineAdLibPieces'
 import { DBSegment, Segments, SegmentId } from '../../../lib/collections/Segments'
 import { AdLibPiece, AdLibPieces } from '../../../lib/collections/AdLibPieces'
@@ -376,7 +376,7 @@ function updateRundownFromIngestData (
 	}
 	// Save the global adlibs
 	logger.info(`... got ${rundownRes.globalAdLibPieces.length} adLib objects from baseline.`)
-	const adlibItems = postProcessAdLibPieces(blueprintRundownContext, rundownRes.globalAdLibPieces, showStyle.base.blueprintId)
+	const adlibItems = postProcessBaselineAdLibPieces(blueprintRundownContext, rundownRes.globalAdLibPieces, showStyle.base.blueprintId)
 
 	// TODO - store notes from rundownNotesContext
 
@@ -521,7 +521,7 @@ function syncChangesToSelectedPartInstances (playlist: RundownPlaylist, parts: D
 				}))
 
 				// Pieces
-				const piecesForPart = pieces.filter(p => p.partId === newPart._id)
+				const piecesForPart = pieces.filter(p => p.startPartId === newPart._id)
 				const currentPieceInstances = rawPieceInstances.filter(p => p.partInstanceId === partInstance._id)
 				const currentPieceInstancesMap = normalizeArrayFunc(currentPieceInstances, p => unprotectString(p.piece._id))
 

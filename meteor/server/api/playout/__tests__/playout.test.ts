@@ -33,8 +33,8 @@ describe('Playout API', () => {
 			parts: rundown.getParts(),
 			segments: rundown.getSegments(),
 			rundown: Rundowns.findOne(rundown._id) as Rundown,
-			pieces: Pieces.find({ rundown: rundown._id }, { sort: { _id: 1 } }).fetch(),
-			adLibPieces: AdLibPieces.find({ rundown: rundown._id }, { sort: { _id: 1 } }).fetch()
+			pieces: Pieces.find({ startRundownId: rundown._id }, { sort: { _id: 1 } }).fetch(),
+			adLibPieces: AdLibPieces.find({ rundownId: rundown._id }, { sort: { _id: 1 } }).fetch()
 		}
 	}
 	beforeEach(() => {

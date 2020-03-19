@@ -1,10 +1,13 @@
-import { AdLibPiece } from './AdLibPieces'
+import { AdLibPiece, AdLibPieceGeneric } from './AdLibPieces'
 import { TransformedCollection } from '../typings/meteor'
 import { registerCollection } from '../lib'
 import { Meteor } from 'meteor/meteor'
 import { createMongoCollection } from './lib'
+import { RundownId } from './Rundowns';
 
-export interface RundownBaselineAdLibItem extends AdLibPiece {
+export interface RundownBaselineAdLibItem extends AdLibPieceGeneric {
+	/** The rundown this piece belongs to */
+	rundownId: RundownId
 }
 
 export const RundownBaselineAdLibPieces: TransformedCollection<RundownBaselineAdLibItem, RundownBaselineAdLibItem>

@@ -91,7 +91,7 @@ export namespace reactiveData {
 		Tracker.autorun(() => {
 			const rundownIds = rRundowns.get().map(r => r._id)
 			const slis = Pieces.find({
-				rundownId: { $in: rundownIds }
+				startRundownId: { $in: rundownIds }
 			}).fetch()
 			rVar.set(slis)
 		})
