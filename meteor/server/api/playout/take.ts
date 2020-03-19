@@ -122,7 +122,8 @@ function startHold(rundownData: RundownPlaylistPlayoutData) {
 
 		// TODO-PartInstance - temporary piece extension, pending new data flow
 		const newPieceTmp: Piece = clone(instance.piece)
-		newPieceTmp.partId = currentPartInstance.part._id
+		newPieceTmp.startPartId = currentPartInstance.part._id
+		newPieceTmp.startPartRank = currentPartInstance.part._rank
 		newPieceTmp.enable = { start: 0 }
 		const contentTmp = newPieceTmp.content as VTContent
 		if (contentTmp.fileName && contentTmp.sourceDuration && instance.piece.startedPlayback) {
@@ -143,7 +144,8 @@ function startHold(rundownData: RundownPlaylistPlayoutData) {
 			piece: {
 				...clone(instance.piece),
 				_id: newPieceTmp._id,
-				partId: currentPartInstance.part._id,
+				startPartId: currentPartInstance.part._id,
+				startPartRank: currentPartInstance.part._rank,
 				enable: { start: 0 },
 				dynamicallyInserted: true
 			}

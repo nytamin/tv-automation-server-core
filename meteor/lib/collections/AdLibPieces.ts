@@ -4,8 +4,15 @@ import { registerCollection, ProtectedStringProperties, Omit } from '../lib'
 import { Meteor } from 'meteor/meteor'
 import { IBlueprintAdLibPiece, BaseContent } from 'tv-automation-sofie-blueprints-integration'
 import { createMongoCollection } from './lib'
+import { RundownId } from './Rundowns';
+import { PartId } from './Parts';
 
-export interface AdLibPiece extends PieceGeneric, Omit<IBlueprintAdLibPiece, 'partId'> {
+export interface AdLibPiece extends PieceGeneric, IBlueprintAdLibPiece {
+	/** The rundown this piece belongs to */
+	rundownId: RundownId
+	/** The Part this piece belongs to */
+	partId?: PartId
+
 	/** The object describing the piece in detail */
 	content?: BaseContent // TODO: Temporary, should be put into IBlueprintAdLibPiece
 

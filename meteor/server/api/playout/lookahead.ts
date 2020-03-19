@@ -5,7 +5,7 @@ import { Studio, MappingExt } from '../../../lib/collections/Studios'
 import { TimelineObjGeneric, TimelineObjRundown, fixTimelineId, TimelineObjType } from '../../../lib/collections/Timeline'
 import { Part, PartId } from '../../../lib/collections/Parts'
 import { Piece } from '../../../lib/collections/Pieces'
-import { orderPieces } from './pieces'
+import { sortPiecesByStart } from './pieces'
 import { literal, clone, unprotectString, protectString } from '../../../lib/lib'
 import { RundownPlaylistPlayoutData } from '../../../lib/collections/RundownPlaylists'
 import { PieceInstance, wrapPieceToInstance } from '../../../lib/collections/PieceInstances'
@@ -259,7 +259,7 @@ function findObjectsForPart (
 		// Only one, just return it
 		return allObjs
 	} else { // They need to be ordered
-		const orderedItems = orderPieces(playoutData.pieces.filter(p => p.partId === partInfo.part._id), partInfo.part._id, partInfo.part.getLastStartedPlayback())
+		const orderedItems = sortPiecesByStart(playoutData.pieces.filter(p => p.partId === partInfo.part._id))
 
 		let allowTransition = false
 		let classesFromPreviousPart: string[] = []

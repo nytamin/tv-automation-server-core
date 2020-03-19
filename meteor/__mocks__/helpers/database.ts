@@ -31,8 +31,7 @@ import {
 	IBlueprintPiece,
 	IBlueprintRuntimeArgumentsItem,
 	TSR,
-	InfiniteMode,
-	IBlueprintInfinitePiece
+	PieceLifespan
 } from 'tv-automation-sofie-blueprints-integration'
 import { ShowStyleBase, ShowStyleBases, DBShowStyleBase, ShowStyleBaseId } from '../../lib/collections/ShowStyleBases'
 import { ShowStyleVariant, DBShowStyleVariant, ShowStyleVariants, ShowStyleVariantId } from '../../lib/collections/ShowStyleVariants'
@@ -331,12 +330,10 @@ export function setupMockShowStyleBlueprint (showStyleVariantId: ShowStyleVarian
 					}
 					const pieces: IBlueprintPiece[] = []
 					const adLibPieces: IBlueprintAdLibPiece[] = []
-					const infinitePieces: IBlueprintInfinitePiece[] = []
 					parts.push({
 						part,
 						pieces,
-						adLibPieces,
-						infinitePieces
+						adLibPieces
 					})
 				})
 				return {
@@ -508,7 +505,8 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 					start: 0
 				},
 				sourceLayerId: env.showStyleBase.sourceLayers[0]._id,
-				outputLayerId: env.showStyleBase.outputLayers[0]._id
+				outputLayerId: env.showStyleBase.outputLayers[0]._id,
+				lifespan: PieceLifespan.WithinPart
 			}
 			Pieces.insert(piece000)
 
@@ -523,7 +521,8 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 					start: 0
 				},
 				sourceLayerId: env.showStyleBase.sourceLayers[1]._id,
-				outputLayerId: env.showStyleBase.outputLayers[0]._id
+				outputLayerId: env.showStyleBase.outputLayers[0]._id,
+				lifespan: PieceLifespan.WithinPart
 			}
 			Pieces.insert(piece001)
 
@@ -531,7 +530,7 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 				_id: protectString(rundownId + '_adLib000'),
 				_rank: 0,
 				expectedDuration: 1000,
-				// infiniteMode: PieceLifespan.Normal,
+				lifespan: PieceLifespan.WithinPart
 				externalId: 'MOCK_ADLIB_000',
 				partId: part00._id,
 				disabled: false,
@@ -539,7 +538,7 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 				status: RundownAPI.PieceStatusCode.UNKNOWN,
 				name: 'AdLib 0',
 				sourceLayerId: env.showStyleBase.sourceLayers[1]._id,
-				outputLayerId: env.showStyleBase.outputLayers[0]._id
+				outputLayerId: env.showStyleBase.outputLayers[0]._id,
 			}
 
 			AdLibPieces.insert(adLibPiece000)
@@ -566,7 +565,8 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 					start: 0
 				},
 				sourceLayerId: env.showStyleBase.sourceLayers[0]._id,
-				outputLayerId: env.showStyleBase.outputLayers[0]._id
+				outputLayerId: env.showStyleBase.outputLayers[0]._id,
+				lifespan: PieceLifespan.WithinPart
 			}
 			Pieces.insert(piece010)
 
@@ -626,7 +626,7 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 		_rank: 0,
 		externalId: 'MOCK_GLOBAL_ADLIB_0',
 		disabled: false,
-		infiniteMode: InfiniteMode.OnRundownEnd,
+		lifespan: PieceLifespan.OutOnRundownEnd,
 		rundownId: segment0.rundownId,
 		status: RundownAPI.PieceStatusCode.UNKNOWN,
 		name: 'Global AdLib 0',
@@ -639,7 +639,7 @@ export function setupDefaultRundown (env: DefaultEnvironment, playlistId: Rundow
 		_rank: 0,
 		externalId: 'MOCK_GLOBAL_ADLIB_1',
 		disabled: false,
-		infiniteMode: InfiniteMode.OnRundownEnd,
+		lifespan: PieceLifespan.OutOnRundownEnd,
 		rundownId: segment0.rundownId,
 		status: RundownAPI.PieceStatusCode.UNKNOWN,
 		name: 'Global AdLib 1',

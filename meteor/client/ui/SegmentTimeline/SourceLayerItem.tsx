@@ -7,7 +7,7 @@ import {
 	PieceUi
 } from './SegmentTimelineContainer'
 import { RundownAPI } from '../../../lib/api/rundown'
-import { SourceLayerType, InfiniteMode, PieceTransitionType } from 'tv-automation-sofie-blueprints-integration'
+import { SourceLayerType, PieceLifespan, PieceTransitionType } from 'tv-automation-sofie-blueprints-integration'
 import { RundownUtils } from '../../lib/rundown'
 import * as ClassNames from 'classnames'
 import { DefaultLayerItemRenderer } from './Renderers/DefaultLayerItemRenderer'
@@ -119,7 +119,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 
 				const widthConstrictedMode = this.state.leftAnchoredWidth > 0 && this.state.rightAnchoredWidth > 0 && ((this.state.leftAnchoredWidth + this.state.rightAnchoredWidth) > this.state.elementWidth)
 
-				const nextIsTouching = !!(piece.cropped || (innerPiece.enable.end && _.isString(innerPiece.enable.end)))
+				const nextIsTouching = !!piece.cropped
 
 				if (this.props.followLiveLine && this.props.isLiveLine) {
 					const liveLineHistoryWithMargin = this.props.liveLineHistorySize - 10
@@ -224,7 +224,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 
 		if ((
 			piece.instance.infinite ||
-			(innerPiece.enable.start !== undefined && innerPiece.enable.end === undefined && innerPiece.enable.duration === undefined)
+			(innerPiece.enable.start !== undefined && innerPiece.enable.duration === undefined)
 		) && !piece.cropped && !innerPiece.playoutDuration && !innerPiece.userDuration) {
 			itemDuration = this.props.partDuration - (piece.renderedInPoint || 0)
 		}
@@ -490,7 +490,7 @@ export const SourceLayerItem = translate()(class extends React.Component<ISource
 					'hide-overflow-labels': this.state.leftAnchoredWidth > 0 && this.state.rightAnchoredWidth > 0 && ((this.state.leftAnchoredWidth + this.state.rightAnchoredWidth) > this.state.elementWidth),
 
 					'infinite': !!(innerPiece.playoutDuration === undefined && innerPiece.userDuration === undefined && piece.instance.infinite),
-					'next-is-touching': !!(this.props.piece.cropped || (innerPiece.enable.end && _.isString(innerPiece.enable.end))),
+					'next-is-touching': !!this.props.piece.cropped,
 
 					'source-missing': innerPiece.status === RundownAPI.PieceStatusCode.SOURCE_MISSING || innerPiece.status === RundownAPI.PieceStatusCode.SOURCE_NOT_SET,
 					'source-broken': innerPiece.status === RundownAPI.PieceStatusCode.SOURCE_BROKEN,

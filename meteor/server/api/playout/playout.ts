@@ -29,7 +29,6 @@ import { Random } from 'meteor/random'
 import * as _ from 'underscore'
 import { logger } from '../../logging'
 import {
-	InfiniteMode,
 	PartHoldMode,
 	VTContent,
 	PartEndState
@@ -65,7 +64,7 @@ import {
 	deactivateRundownPlaylist as libDeactivateRundownPlaylist,
 	deactivateRundownPlaylistInner
 } from './actions'
-import { PieceResolved, getOrderedPiece, getResolvedPieces, convertAdLibToPieceInstance, convertPieceToAdLibPiece, orderPieces } from './pieces'
+import { PieceResolved, getResolvedPieces, convertAdLibToPieceInstance, convertPieceToAdLibPiece, sortPiecesByStart } from './pieces'
 import { PackageInfo } from '../../coreSystem'
 import { areThereActiveRundownPlaylistsInStudio } from './studio'
 import { updateSourceLayerInfinitesAfterPart } from './infinites'
@@ -468,27 +467,27 @@ export namespace ServerPlayoutAPI {
 				}
 
 				const pieceInstances = partInstance.getAllPieceInstances()
-				const orderedPieces: Array<PieceResolved> = orderPieces(pieceInstances.map(p => p.piece), partInstance.part._id, partInstance.part.getLastStartedPlayback())
+				const sortedPieces: Piece[] = sortPiecesByStart(pieceInstances.map(p => p.piece))
 
 				let findLast: boolean = !!undo
 
 				let filteredPieces = _.sortBy(
-					_.filter(orderedPieces, (piece: PieceResolved) => {
+					_.filter(sortedPieces, (piece: Piece) => {
 						let sourceLayer = allowedSourceLayers[piece.sourceLayerId]
-						if (sourceLayer && sourceLayer.allowDisable && !piece.virtual) return true
+						if (sourceLayer && sourceLayer.allowDisable && !piece.virtual && !piece.isTransition) return true
 						return false
 					}),
-					(piece: PieceResolved) => {
+					(piece: Piece) => {
 						let sourceLayer = allowedSourceLayers[piece.sourceLayerId]
 						return sourceLayer._rank || -9999
 					}
 				)
 				if (findLast) filteredPieces.reverse()
 
-				let nextPiece: PieceResolved | undefined = _.find(filteredPieces, (piece) => {
-					logger.info('piece.resolvedStart', piece.resolvedStart)
+				let nextPiece: Piece | undefined = _.find(filteredPieces, (piece) => {
+					logger.info('piece.enable.start', piece.enable.start)
 					return (
-						piece.resolvedStart >= nowInPart &&
+						piece.enable.start >= nowInPart &&
 						(
 							(
 								!undo &&

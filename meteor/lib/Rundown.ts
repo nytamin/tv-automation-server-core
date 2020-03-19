@@ -4,7 +4,8 @@ import { Pieces, Piece, PieceId } from './collections/Pieces'
 import {
 	getPieceGroupId,
 	IOutputLayer,
-	ISourceLayer
+	ISourceLayer,
+	PieceLifespan
 } from 'tv-automation-sofie-blueprints-integration'
 import { normalizeArray, literal, waitForPromise, fetchNext, last, unprotectObject } from './lib'
 import { Segment, DBSegment } from './collections/Segments'
@@ -255,12 +256,16 @@ export function getResolvedSegment (
 
 			// insert items into the timeline for resolution
 			_.each<PieceExtended>(partE.pieces, (piece) => {
+				const rawInnerPiece: Piece = piece.instance.piece
 				partTimeline.push({
-					id: getPieceGroupId(unprotectObject(piece.instance.piece)),
-					enable: calculatePieceTimelineEnable(piece.instance.piece, TIMELINE_TEMP_OFFSET),
-					layer: piece.instance.piece.outputLayerId,
+					id: getPieceGroupId(unprotectObject(rawInnerPiece)),
+					enable: {
+						...rawInnerPiece.enable,
+						start: rawInnerPiece.enable.start +  TIMELINE_TEMP_OFFSET
+					},
+					layer: rawInnerPiece.outputLayerId,
 					content: {
-						id: piece.instance.piece._id
+						id: rawInnerPiece._id
 					}
 				})
 				// find the target output layer
@@ -404,8 +409,8 @@ export function getResolvedSegment (
 								previousItem.cropped = true
 								if (previousItem.instance.infinite) {
 									// TODO
+									previousItem.instance.piece.lifespan = PieceLifespan.WithinPart
 									delete previousItem.instance.infinite
-									// previousItem.instance.piece.infiniteMode = PieceLifespan.Normal
 								}
 							}
 
@@ -503,52 +508,6 @@ export function offsetTimelineEnableExpression (val: SuperTimeline.Expression | 
 			return offset
 		} else { // Unreachable fallback case
 			return val
-		}
-	}
-}
-
-export function calculatePieceTimelineEnable (piece: Piece, offset?: number): SuperTimeline.TimelineEnable {
-	let duration: SuperTimeline.Expression | undefined
-	let end: SuperTimeline.Expression | undefined
-	if (piece.playoutDuration !== undefined) {
-		duration = piece.playoutDuration
-	} else if (piece.userDuration !== undefined) {
-		duration = piece.userDuration.duration
-		end = piece.userDuration.end
-	} else {
-		duration = piece.enable.duration
-		end = piece.enable.end
-	}
-
-	// If we have an end and not a start, then use that with a duration
-	if ((end !== undefined || piece.enable.end !== undefined) && piece.enable.start === undefined) {
-		return {
-			end: end !== undefined ? end : offsetTimelineEnableExpression(piece.enable.end, offset),
-			duration: duration
-		}
-	// Otherwise, if we have a start, then use that with either the end or duration
-	} else if (piece.enable.start !== undefined) {
-		let enable = literal<SuperTimeline.TimelineEnable>({})
-
-		if (piece.enable.start === 'now') {
-			enable.start = 'now'
-		} else {
-			enable.start = offsetTimelineEnableExpression(piece.enable.start, offset)
-		}
-
-		if (duration !== undefined) {
-			enable.duration = duration
-		} else if (end !== undefined) {
-			enable.end = end
-		} else if (piece.enable.end !== undefined) {
-			enable.end = offsetTimelineEnableExpression(piece.enable.end, offset)
-		}
-		return enable
-	} else {
-		return {
-			start: 0,
-			duration: duration,
-			end: end,
 		}
 	}
 }

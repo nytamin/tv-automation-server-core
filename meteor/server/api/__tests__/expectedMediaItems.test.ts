@@ -170,7 +170,7 @@ describe('Expected Media Items', () => {
 			disabled: false,
 			expectedDuration: 0,
 			externalId: '',
-			infiniteMode: PieceLifespan.Normal,
+			lifespan: PieceLifespan.WithinPart,
 			invalid: false,
 			metaData: {},
 			outputLayerId: LAYER_IDS.OUTPUT_PGM,

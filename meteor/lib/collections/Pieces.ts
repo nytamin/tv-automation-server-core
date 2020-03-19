@@ -11,20 +11,17 @@ import {
 } from 'tv-automation-sofie-blueprints-integration'
 import { createMongoCollection } from './lib'
 import { RundownId } from './Rundowns'
+import { SegmentId } from './Segments';
 
 /** A string, identifying a Piece */
 export type PieceId = ProtectedString<'PieceId'>
-export type InternalIBlueprintPieceGeneric = ProtectedStringProperties<IBlueprintPieceGeneric, 'partId'>
 
 /** A Single item in a Part: script, VT, cameras */
-export interface PieceGeneric extends InternalIBlueprintPieceGeneric {
-	_id: PieceId
+export interface PieceGeneric extends IBlueprintPieceGeneric {
+	_id: PieceId // TODO - this should be moved to the implementation types
+
 	/** ID of the source object in MOS */
 	externalId: string
-	/** The rundown this piece belongs to */
-	rundownId: RundownId
-	/** The Part this piece belongs to */
-	partId?: PartId
 
 	/** Playback availability status */
 	status: RundownAPI.PieceStatusCode
@@ -51,9 +48,17 @@ export interface PieceGeneric extends InternalIBlueprintPieceGeneric {
 	extendOnHold?: boolean
 }
 
-export interface Piece extends PieceGeneric, ProtectedStringProperties<Omit<IBlueprintPieceDB, '_id' | 'partId' | 'continuesRefId'>, 'infiniteId'> {
+export interface Piece extends PieceGeneric, ProtectedStringProperties<Omit<IBlueprintPieceDB, '_id' | 'continuesRefId'>, 'infiniteId'> {
+	/** The rundown this piece belongs to */
+	startRundownId: RundownId
+	startRundownRank: number
 
-	partId: PartId
+    startSegmentId: SegmentId
+	startSegmentRank: number
+	
+	startPartId: PartId
+	startPartRank: number
+	
 	/** This is set when an piece's duration needs to be overriden */
 	userDuration?: Pick<Timeline.TimelineEnable, 'duration' | 'end'>
 	// /** This is set when the piece is infinite, to deduplicate the contents on the timeline, while allowing out of order */
@@ -82,7 +87,7 @@ Meteor.startup(() => {
 	if (Meteor.isServer) {
 		Pieces._ensureIndex({
 			rundownId: 1,
-			partId: 1
+			startPartId: 1
 		})
 	}
 })

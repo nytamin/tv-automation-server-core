@@ -1,12 +1,11 @@
 import { TransformedCollection } from '../typings/meteor'
 import { registerCollection, literal, ProtectedString, ProtectedStringProperties, protectString, Omit } from '../lib'
 import { Meteor } from 'meteor/meteor'
-import { IBlueprintPieceInstance, Time, IBlueprintResolvedPieceInstance, InfiniteMode } from 'tv-automation-sofie-blueprints-integration'
+import { IBlueprintPieceInstance, Time, IBlueprintResolvedPieceInstance, PieceLifespan } from 'tv-automation-sofie-blueprints-integration'
 import { createMongoCollection } from './lib'
-import { Piece } from './Pieces'
+import { Piece, PieceId } from './Pieces'
 import { PartInstance, PartInstanceId } from './PartInstances'
 import { RundownId } from './Rundowns'
-import { InfinitePieceId } from './InfinitePiece';
 
 /** A string, identifying a PieceInstance */
 export type PieceInstanceId = ProtectedString<'PieceInstanceId'>
@@ -30,8 +29,8 @@ export interface PieceInstance extends ProtectedStringProperties<Omit<IBlueprint
 
 	/** Only set when this pieceInstance is an infinite. It contains info about the infinite */
 	infinite?: {
-		infinitePieceId: InfinitePieceId
-		mode: InfiniteMode // In case the original piece gets destroyed/mutated? // TODO - is this wanted?
+		infinitePieceId: PieceId
+		// lifespan: PieceLifespan // In case the original piece gets destroyed/mutated? // TODO - is this wanted?
 		// TODO - more properties?
 	}
 }
@@ -44,7 +43,7 @@ export function wrapPieceToTemporaryInstance (piece: Piece, partInstanceId: Part
 	return literal<PieceInstance>({
 		isTemporary: true,
 		_id: protectString(`${piece._id}_tmp_instance`),
-		rundownId: piece.rundownId,
+		rundownId: piece.startRundownId,
 		partInstanceId: partInstanceId,
 		piece: piece
 	})
@@ -53,7 +52,7 @@ export function wrapPieceToTemporaryInstance (piece: Piece, partInstanceId: Part
 export function wrapPieceToInstance (piece: Piece, partInstanceId: PartInstanceId): PieceInstance {
 	return {
 		_id: protectString(`${partInstanceId}_${piece._id}`),
-		rundownId: piece.rundownId,
+		rundownId: piece.startRundownId,
 		partInstanceId: partInstanceId,
 		piece: piece
 	}

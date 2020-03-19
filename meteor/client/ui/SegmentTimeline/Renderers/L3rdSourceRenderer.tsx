@@ -5,7 +5,7 @@ import { Time } from '../../../../lib/lib'
 import { RundownUtils } from '../../../lib/rundown'
 import Moment from 'react-moment'
 
-import { InfiniteMode, NoraContent } from 'tv-automation-sofie-blueprints-integration'
+import { PieceLifespan, NoraContent } from 'tv-automation-sofie-blueprints-integration'
 
 import { FloatingInspector } from '../../FloatingInspector'
 
@@ -131,8 +131,8 @@ export const L3rdSourceRenderer = translate()(class extends CustomLayerItemRende
 											<span className='mini-inspector__in-point'>{RundownUtils.formatTimeToShortTime(this.props.piece.renderedInPoint || 0)}</span>
 											{pieceInstance.infinite ?
 												(
-													(pieceInstance.infinite.mode === InfiniteMode.OnSegmentEnd && <span className='mini-inspector__duration'>{t('Until next segment')}</span>) ||
-													(pieceInstance.infinite.mode === InfiniteMode.OnRundownEnd && <span className='mini-inspector__duration'>{t('Until rundown end')}</span>)
+													(pieceInstance.piece.lifespan === PieceLifespan.OutOnSegmentEnd && <span className='mini-inspector__duration'>{t('Until next segment')}</span>) ||
+													(pieceInstance.piece.lifespan === PieceLifespan.OutOnRundownEnd && <span className='mini-inspector__duration'>{t('Until rundown end')}</span>)
 												)
 												: <span className='mini-inspector__duration'>{RundownUtils.formatTimeToShortTime(this.props.piece.renderedDuration || (_.isNumber(innerPiece.enable.duration) ? parseFloat(innerPiece.enable.duration as any as string) : 0))}</span>
 											}

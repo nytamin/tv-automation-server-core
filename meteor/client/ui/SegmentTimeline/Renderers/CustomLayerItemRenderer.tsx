@@ -10,7 +10,7 @@ import {
 import { RundownUtils } from '../../../lib/rundown'
 import * as faCut from '@fortawesome/fontawesome-free-solid/faCut'
 import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
-import { VTContent, InfiniteMode } from 'tv-automation-sofie-blueprints-integration'
+import { VTContent, PieceLifespan } from 'tv-automation-sofie-blueprints-integration'
 import { OffsetPosition } from '../../../utils/positions'
 
 export interface ICustomLayerItemProps {
@@ -111,7 +111,7 @@ export class CustomLayerItemRenderer<IProps extends ICustomLayerItemProps, IStat
 		const uiPiece = this.props.piece
 		const innerPiece = uiPiece.instance.piece
 
-		return (uiPiece.instance.infinite && uiPiece.instance.infinite.mode === InfiniteMode.OnRundownEnd && !innerPiece.playoutDuration && !innerPiece.userDuration) ?
+		return (uiPiece.instance.infinite && uiPiece.instance.piece.lifespan === PieceLifespan.OutOnRundownEnd && !innerPiece.playoutDuration && !innerPiece.userDuration) ?
 			<div className='segment-timeline__piece__label label-icon label-infinite-icon'>
 				<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='#ffff00' viewBox='0 0 8 8'>
 					<path d='M2 0c-1.31 0-2 1.01-2 2s.69 2 2 2c.79 0 1.42-.56 2-1.22.58.66 1.19 1.22 2 1.22 1.31 0 2-1.01 2-2s-.69-2-2-2c-.81 0-1.42.56-2 1.22-.58-.66-1.21-1.22-2-1.22zm0 1c.42 0 .88.47 1.34 1-.46.53-.92 1-1.34 1-.74 0-1-.54-1-1 0-.46.26-1 1-1zm4 0c.74 0 1 .54 1 1 0 .46-.26 1-1 1-.43 0-.89-.47-1.34-1 .46-.53.91-1 1.34-1z'

@@ -355,7 +355,7 @@ export class RundownPlaylist implements DBRundownPlaylist {
 			part.getAllPieces = () => {
 				return _.map(_.filter(pieces, (piece) => {
 					return (
-						piece.partId === part._id
+						piece.startPartId === part._id
 					)
 				}), (part) => {
 					return _.clone(part)

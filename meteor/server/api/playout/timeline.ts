@@ -459,8 +459,8 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 		const currentPieces = currentPartInstance.getAllPieceInstances()
 		// TODO - this will conflict when merging in TV2 stuff. It should look more like theirs than this.
 		const currentPartId = currentPartInstance.part._id
-		const currentInfinitePieces = currentPieces.filter(l => (l.infinite && l.piece.partId !== currentPartId))
-		const currentNormalItems = currentPieces.filter(l => !(l.infinite && l.piece.partId !== currentPartId))
+		const currentInfinitePieces = currentPieces.filter(l => (l.infinite && l.piece.startPartId !== currentPartId))
+		const currentNormalItems = currentPieces.filter(l => !(l.infinite && l.piece.startPartId !== currentPartId))
 
 		let allowTransition = false
 
@@ -546,7 +546,7 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 			}
 
 			// Still show objects flagged as 'HoldMode.EXCEPT' if this is a infinite continuation as they belong to the previous too
-			const isOriginOfInfinite = piece.piece.partId !== currentPartInstance.part._id
+			const isOriginOfInfinite = piece.piece.startPartId !== currentPartInstance.part._id
 			timelineObjs = timelineObjs.concat(infiniteGroup, transformPartIntoTimeline([piece], groupClasses, infiniteGroup, undefined, activePlaylist.holdState, isOriginOfInfinite))
 		}
 
@@ -712,18 +712,20 @@ function transformPartIntoTimeline (
 		) {
 			let tos: TimelineObjectCoreExt[] = pieceInstance.piece.content.timelineObjects
 
-			if (pieceInstance.piece.enable.start === 0 && !isInfiniteContinuation) {
+			const pieceEnable: TSR.Timeline.TimelineEnable = pieceInstance.piece.enable
+
+			if (pieceEnable.start === 0 && !isInfiniteContinuation) {
 				// If timed absolute and there is a transition delay, then apply delay
 				if (!pieceInstance.piece.isTransition && allowTransition && transition && !pieceInstance.piece.adLibSourceId) {
 					const transitionContentsDelayStr = transitionContentsDelay < 0 ? `- ${-transitionContentsDelay}` : `+ ${transitionContentsDelay}`
-					pieceInstance.piece.enable.start = `#${getPieceGroupId(unprotectObject(transition.piece))}.start ${transitionContentsDelayStr}`
+					pieceEnable.start = `#${getPieceGroupId(unprotectObject(transition.piece))}.start ${transitionContentsDelayStr}`
 				} else if (pieceInstance.piece.isTransition && transitionPieceDelay) {
-					pieceInstance.piece.enable.start = Math.max(0, transitionPieceDelay)
+					pieceEnable.start = Math.max(0, transitionPieceDelay)
 				}
 			}
 
 			// create a piece group for the pieces and then place all of them there
-			const pieceGroup = createPieceGroup(pieceInstance, partGroup)
+			const pieceGroup = createPieceGroup(pieceInstance, partGroup, pieceEnable)
 			timelineObjs.push(pieceGroup)
 
 			if (!pieceInstance.piece.virtual) {

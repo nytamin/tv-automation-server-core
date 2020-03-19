@@ -91,15 +91,15 @@ export function resetRundown (rundown: Rundown) {
 		}
 	}, { multi: true })
 
-	// Reset any pieces that were modified by inserted adlibs
-	Pieces.update({
-		rundownId: rundown._id,
-		originalInfiniteMode: { $exists: true }
-	}, {
-		$rename: {
-			originalInfiniteMode: 'infiniteMode'
-		}
-	}, { multi: true })
+	// // Reset any pieces that were modified by inserted adlibs
+	// Pieces.update({
+	// 	rundownId: rundown._id,
+	// 	originalInfiniteMode: { $exists: true }
+	// }, {
+	// 	$rename: {
+	// 		originalInfiniteMode: 'infiniteMode'
+	// 	}
+	// }, { multi: true })
 
 	Pieces.update({
 		rundownId: rundown._id
@@ -224,17 +224,17 @@ export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
 		}
 	}, { multi: true })
 
-	// Reset any pieces that were modified by inserted adlibs
-	Pieces.update({
-		rundownId: {
-			$in: rundownIDs
-		},
-		originalInfiniteMode: { $exists: true }
-	}, {
-		$rename: {
-			originalInfiniteMode: 'infiniteMode'
-		}
-	}, { multi: true })
+	// // Reset any pieces that were modified by inserted adlibs
+	// Pieces.update({
+	// 	rundownId: {
+	// 		$in: rundownIDs
+	// 	},
+	// 	originalInfiniteMode: { $exists: true }
+	// }, {
+	// 	$rename: {
+	// 		originalInfiniteMode: 'infiniteMode'
+	// 	}
+	// }, { multi: true })
 
 	Pieces.update({
 		rundownId: {
@@ -459,13 +459,14 @@ export function setNextPart (
 			// Start new infinites
 			_.each(infinitesToCopy.newInfinites, newInfinite => {
 				const newInstance = wrapPieceToInstance({
-					...omit(newInfinite.piece, 'infiniteMode'),
-					partId: newInfinite.startPartId,
+					...newInfinite,
+					startPartId: newInfinite.startPartId,
+					startPartRank: newInfinite.startPartRank
 				}, newInstanceId)
 				newInstance.rundownId = nextPart.rundownId
 				newInstance.infinite = {
 					infinitePieceId: newInfinite._id,
-					mode: newInfinite.piece.infiniteMode
+					// mode: newInfinite.lifespan
 				}
 				pieceInstances.push(newInstance)
 			})
@@ -601,18 +602,18 @@ function resetPart (part: DBPart): Promise<void> {
 		dynamicallyInserted: true
 	}))
 
-	// Reset any pieces that were modified by inserted adlibs
-	ps.push(asyncCollectionUpdate(Pieces, {
-		rundownId: part.rundownId,
-		partId: part._id,
-		originalInfiniteMode: { $exists: true }
-	}, {
-		$rename: {
-			originalInfiniteMode: 'infiniteMode'
-		}
-	}, {
-		multi: true
-	}))
+	// // Reset any pieces that were modified by inserted adlibs
+	// ps.push(asyncCollectionUpdate(Pieces, {
+	// 	rundownId: part.rundownId,
+	// 	partId: part._id,
+	// 	originalInfiniteMode: { $exists: true }
+	// }, {
+	// 	$rename: {
+	// 		originalInfiniteMode: 'infiniteMode'
+	// 	}
+	// }, {
+	// 	multi: true
+	// }))
 
 	let isDirty = part.dirty || false
 
