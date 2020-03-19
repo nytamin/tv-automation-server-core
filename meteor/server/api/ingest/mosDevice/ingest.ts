@@ -37,6 +37,8 @@ import { logger } from '../../../../lib/logging'
 import { RundownPlaylist } from '../../../../lib/collections/RundownPlaylists'
 import { Parts, PartId } from '../../../../lib/collections/Parts'
 import { PartInstances } from '../../../../lib/collections/PartInstances'
+import { Pieces } from '../../../../lib/collections/Pieces';
+import { PieceInstances } from '../../../../lib/collections/PieceInstances';
 
 interface AnnotatedIngestPart {
 	externalId: string
@@ -497,12 +499,13 @@ function diffAndApplyChanges (
 	// Update segment ranks:
 	let ps: Array<Promise<any>> = []
 	_.each(segmentDiff.onlyRankChanged, (newRank, segmentExternalId) => {
+		const segmentId = getSegmentId(rundown._id, segmentExternalId)
 		ps.push(
 			asyncCollectionUpdate(
 				Segments,
 				{
 					rundownId: rundown._id,
-					_id: getSegmentId(rundown._id, segmentExternalId)
+					_id: segmentId
 				},
 				{
 					$set: {
@@ -511,6 +514,16 @@ function diffAndApplyChanges (
 				}
 			)
 		)
+		
+		// Push updates to the pieces too
+		ps.push(asyncCollectionUpdate(Pieces, {
+			startRundownId: rundown._id,
+			startSegmentId: segmentId,
+		}, {
+			$set: {
+				startSegmentRank: newRank
+			}
+		}))
 	})
 	// Updated segments that has had their segment.externalId changed:
 	_.each(segmentDiff.onlyExternalIdChanged, (newSegmentExternalId, oldSegmentExternalId) => {
@@ -554,6 +567,16 @@ function diffAndApplyChanges (
 				}
 			)
 		)
+
+		// Push updates to the pieces too
+		ps.push(asyncCollectionUpdate(Pieces, {
+			startRundownId: rundown._id,
+			startSegmentId: oldSegmentId,
+		}, {
+			$set: {
+				startSegmentId: newSegmentId
+			}
+		}))
 	})
 
 	waitForPromiseAll(ps)

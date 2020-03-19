@@ -576,12 +576,9 @@ function syncChangesToSelectedPartInstances (playlist: RundownPlaylist, parts: D
 
 function handleUpdatedRundownPlaylist (currentRundown: DBRundown, playlist: DBRundownPlaylist, order: _.Dictionary<number>) {
 	let rundowns: DBRundown[] = []
-	let selector: Mongo.Selector<DBRundown> = {}
 	if (currentRundown.playlistExternalId && playlist.externalId === currentRundown.playlistExternalId) {
-		selector = { playlistExternalId: currentRundown.playlistExternalId }
 		rundowns = Rundowns.find({ playlistExternalId: currentRundown.playlistExternalId }).fetch()
 	} else if (!currentRundown.playlistExternalId) {
-		selector = { _id: currentRundown._id }
 		rundowns = [ currentRundown ]
 	} else if (currentRundown.playlistExternalId && playlist.externalId !== currentRundown.playlistExternalId) {
 		throw new Meteor.Error(501, `Rundown "${currentRundown._id}" is assigned to a playlist "${currentRundown.playlistExternalId}", but the produced playlist has external ID: "${playlist.externalId}".`)
@@ -589,18 +586,34 @@ function handleUpdatedRundownPlaylist (currentRundown: DBRundown, playlist: DBRu
 		throw new Meteor.Error(501, `Unknown error when handling rundown playlist.`)
 	}
 
-	const updated = rundowns.map(r => {
-		const rundownOrder = order[unprotectString(r._id)]
-		if (rundownOrder !== undefined) {
-			r.playlistId = playlist._id
-			r._rank = rundownOrder
+	const ps: Array<Promise<any>> = []
+
+	rundowns.forEach(r => {
+		const newRank = order[unprotectString(r._id)]
+		if (newRank !== undefined) {
+			if (r.playlistId !== playlist._id || r._rank !== newRank) {
+				ps.push(asyncCollectionUpdate(Rundowns, r._id, {
+					$set: {
+						playlistId: playlist._id,
+						_rank: newRank
+					}
+				}))
+
+				// Update any pieces that cache this info
+				ps.push(asyncCollectionUpdate(Pieces, {
+					startRundownId: r._id
+				}, {
+					$set: {
+						startRundownRank: newRank
+					}
+				}))
+			}
 		} else {
 			// an unranked Rundown is essentially "floated" - it is a part of the playlist, but it shouldn't be visible in the UI
 		}
-		return r
 	})
 
-	saveIntoDb(Rundowns, selector, updated)
+	waitForPromiseAll(ps)
 }
 
 function handleRemovedSegment (peripheralDevice: PeripheralDevice, rundownExternalId: string, segmentExternalId: string) {
@@ -913,7 +926,7 @@ function generateSegmentContents (
 
 		// Update pieces
 		// TODO - when the part is invalid, these should either be invalid themselves, or deleted
-		const pieces = postProcessPieces(context, blueprintPart.pieces, blueprintId, part._id, newSegment._id)
+		const pieces = postProcessPieces(context, blueprintPart.pieces, blueprintId, part, newSegment)
 		segmentPieces.push(...pieces)
 
 		const adlibs = postProcessAdLibPieces(context, blueprintPart.adLibPieces, blueprintId, part._id)

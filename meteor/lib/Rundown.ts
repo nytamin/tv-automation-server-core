@@ -15,7 +15,7 @@ import { RundownPlaylist } from './collections/RundownPlaylists'
 import { ShowStyleBase } from './collections/ShowStyleBases'
 import { interpretExpression } from 'superfly-timeline/dist/resolver/expression'
 import { PartInstance, findPartInstanceOrWrapToTemporary } from './collections/PartInstances'
-import { PieceInstance, PieceInstances, wrapPieceToTemporaryInstance } from './collections/PieceInstances'
+import { PieceInstance, PieceInstances, wrapPieceToTemporaryInstance, PieceInstancePiece } from './collections/PieceInstances'
 
 export const DEFAULT_DISPLAY_DURATION = 3000
 
@@ -256,7 +256,7 @@ export function getResolvedSegment (
 
 			// insert items into the timeline for resolution
 			_.each<PieceExtended>(partE.pieces, (piece) => {
-				const rawInnerPiece: Piece = piece.instance.piece
+				const rawInnerPiece: PieceInstancePiece = piece.instance.piece
 				partTimeline.push({
 					id: getPieceGroupId(unprotectObject(rawInnerPiece)),
 					enable: {

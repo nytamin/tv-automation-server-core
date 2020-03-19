@@ -26,7 +26,7 @@ import { AdLibPiece, AdLibPieceGeneric } from '../../../lib/collections/AdLibPie
 import { Random } from 'meteor/random'
 import { prefixAllObjectIds } from './lib'
 import { RundownPlaylistPlayoutData } from '../../../lib/collections/RundownPlaylists'
-import { PieceInstance, ResolvedPieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
+import { PieceInstance, ResolvedPieceInstance, PieceInstanceId, PieceInstancePiece } from '../../../lib/collections/PieceInstances'
 import { PartInstance } from '../../../lib/collections/PartInstances'
 
 export interface PieceResolved extends Piece {
@@ -270,7 +270,7 @@ export function getResolvedPiecesFromFullTimeline (playoutData: RundownPlaylistP
 }
 
 
-export function convertPieceToAdLibPiece (piece: Piece): AdLibPiece {
+export function convertPieceToAdLibPiece (piece: PieceInstancePiece): AdLibPiece {
 	// const oldId = piece._id
 	const newId = Random.id()
 	const newAdLibPiece = literal<AdLibPiece>({
@@ -303,7 +303,7 @@ export function convertPieceToAdLibPiece (piece: Piece): AdLibPiece {
 	return newAdLibPiece
 }
 
-export function convertAdLibToPieceInstance (adLibPiece: AdLibPieceGeneric | Piece, partInstance: PartInstance, queue: boolean): PieceInstance {
+export function convertAdLibToPieceInstance (adLibPiece: AdLibPieceGeneric | PieceInstancePiece, partInstance: PartInstance, queue: boolean): PieceInstance {
 	let duration: number | string | undefined = undefined
 	if (adLibPiece['expectedDuration']) {
 		duration = adLibPiece['expectedDuration']
