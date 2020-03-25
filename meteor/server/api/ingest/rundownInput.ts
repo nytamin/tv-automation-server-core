@@ -105,13 +105,13 @@ export namespace RundownInput {
 		const peripheralDevice = PeripheralDeviceSecurity.getPeripheralDevice(deviceId, deviceToken, self)
 		logger.info('dataRundownCreate', ingestRundown)
 		check(ingestRundown, Object)
-		handleUpdatedRundown(peripheralDevice, ingestRundown, 'dataRundownCreate')
+		handleUpdatedRundown(undefined, peripheralDevice, ingestRundown, 'dataRundownCreate')
 	}
 	export function dataRundownUpdate (self: any, deviceId: PeripheralDeviceId, deviceToken: string, ingestRundown: IngestRundown) {
 		const peripheralDevice = PeripheralDeviceSecurity.getPeripheralDevice(deviceId, deviceToken, self)
 		logger.info('dataRundownUpdate', ingestRundown)
 		check(ingestRundown, Object)
-		handleUpdatedRundown(peripheralDevice, ingestRundown, 'dataRundownUpdate')
+		handleUpdatedRundown(undefined, peripheralDevice, ingestRundown, 'dataRundownUpdate')
 	}
 	// Delete, Create & Update Segment (and it's contents):
 	export function dataSegmentDelete (self: any, deviceId: PeripheralDeviceId, deviceToken: string, rundownExternalId: string, segmentExternalId: string) {
@@ -221,8 +221,16 @@ export function handleRemovedRundown (peripheralDevice: PeripheralDevice, rundow
 		}
 	})
 }
-export function handleUpdatedRundown (peripheralDevice: PeripheralDevice, ingestRundown: IngestRundown, dataSource: string) {
-	const studio = getStudioFromDevice(peripheralDevice)
+export function handleUpdatedRundown (studio0: Studio | undefined, peripheralDevice: PeripheralDevice | undefined, ingestRundown: IngestRundown, dataSource: string) {
+	let studio: Studio
+	if (studio0 && (!peripheralDevice || peripheralDevice.studioId === studio0._id)) {
+		studio = studio0
+	} else if (peripheralDevice) {
+		studio = getStudioFromDevice(peripheralDevice)
+	} else {
+		throw new Meteor.Error(500, `handleUpdatedRundown expects a Studio or PeripheralDevice`)
+	}
+
 	const rundownId = getRundownId(studio, ingestRundown.externalId)
 	if (peripheralDevice && peripheralDevice.studioId !== studio._id) {
 		throw new Meteor.Error(500, `PeripheralDevice "${peripheralDevice._id}" does not belong to studio "${studio._id}"`)
@@ -233,33 +241,13 @@ export function handleUpdatedRundown (peripheralDevice: PeripheralDevice, ingest
 	const playlistId = existingRundown ? existingRundown.playlistId : protectString('newPlaylist')
 	return rundownPlaylistSyncFunction(playlistId, RundownSyncFunctionPriority.INGEST, () => handleUpdatedRundownInner(studio, rundownId, ingestRundown, dataSource, peripheralDevice))
 }
-export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId, ingestRundown: IngestRundown, dataSource?: string, peripheralDevice?: PeripheralDevice) {
+export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId, ingestRundown: IngestRundown, dataSource?: string, peripheralDevice?: PeripheralDevice): boolean  {
 	const existingDbRundown = Rundowns.findOne(rundownId)
-	if (!canBeUpdated(existingDbRundown)) return
+	if (!canBeUpdated(existingDbRundown)) return false
 
-	updateRundownAndSaveCache(studio, rundownId, existingDbRundown, ingestRundown, dataSource, peripheralDevice)
-}
-export function updateRundownAndSaveCache (
-	studio: Studio,
-	rundownId: RundownId,
-	existingDbRundown: Rundown | undefined,
-	ingestRundown: IngestRundown,
-	dataSource?: string,
-	peripheralDevice?: PeripheralDevice) {
 	logger.info((existingDbRundown ? 'Updating' : 'Adding') + ' rundown ' + rundownId)
 
 	saveRundownCache(rundownId, ingestRundown)
-
-	updateRundownFromIngestData(studio, existingDbRundown, ingestRundown, dataSource, peripheralDevice)
-}
-function updateRundownFromIngestData (
-	studio: Studio,
-	existingDbRundown: Rundown | undefined,
-	ingestRundown: IngestRundown,
-	dataSource?: string,
-	peripheralDevice?: PeripheralDevice
-): boolean {
-	const rundownId = getRundownId(studio, ingestRundown.externalId)
 
 	const showStyle = selectShowStyleVariant(studio, ingestRundown)
 	if (!showStyle) {
