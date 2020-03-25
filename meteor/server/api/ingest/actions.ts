@@ -8,7 +8,7 @@ import { check } from 'meteor/check'
 import { PeripheralDevices } from '../../../lib/collections/PeripheralDevices'
 import { loadCachedRundownData } from './ingestCache'
 import { resetRundown } from '../playout/lib'
-import { RundownSyncFunctionPriority, rundownPlaylistSyncFunction, handleUpdatedRundownInner } from './rundownInput'
+import { RundownSyncFunctionPriority, rundownPlaylistSyncFunction, handleUpdatedRundownInner, ensurePlayoutUpdatedFromIngestChange } from './rundownInput'
 import { logger } from '../../logging'
 import { Studio, Studios } from '../../../lib/collections/Studios'
 import { RundownPlaylists, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
@@ -95,7 +95,7 @@ export namespace IngestActions {
 			throw new Meteor.Error(404,`Studios "${rundownPlaylist.studioId}" was not found for Rundown Playlist "${rundownPlaylist._id}"`)
 		}
 
-		return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.INGEST, () => {
+		rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.INGEST, () => {
 			rundownPlaylist.getRundowns().forEach(rundown => {
 				if (rundown.studioId !== studio._id) {
 					logger.warning(`Rundown "${rundown._id}" does not belong to the same studio as its playlist "${rundownPlaylist._id}"`)
@@ -116,5 +116,10 @@ export namespace IngestActions {
 				handleUpdatedRundownInner(studio, rundown._id, ingestRundown, rundown.dataSource, peripheralDevice)
 			})
 		})
+		
+		// Reload playlist and ensure timeline is updated
+		const rundownPlaylist2 = RundownPlaylists.findOne(rundownPlaylistId)
+		if (!rundownPlaylist2) throw new Meteor.Error(404, `Rundown Playlist "${rundownPlaylistId}" not found`)
+		ensurePlayoutUpdatedFromIngestChange(rundownPlaylist2, [], true)
 	}
 }

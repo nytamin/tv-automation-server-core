@@ -67,6 +67,7 @@ import { Mongo } from 'meteor/mongo'
 import { isTooCloseToAutonext } from '../playout/lib'
 import { PartInstances, PartInstance } from '../../../lib/collections/PartInstances'
 import { PieceInstances, wrapPieceToInstance, PieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
+import { updateTimeline } from '../playout/timeline';
 
 /** Priority for handling of synchronous events. Lower means higher priority */
 export enum RundownSyncFunctionPriority {
@@ -213,7 +214,7 @@ export function handleRemovedRundown (peripheralDevice: PeripheralDevice, rundow
 				logger.warn(`Not allowing removal of currently playing rundown "${rundown._id}", making it unsynced instead`)
 				ServerRundownAPI.unsyncRundown(rundown._id)
 			}
-		 } else {
+		} else {
 			logger.info(`Rundown "${rundown._id}" cannot be updated`)
 			if (!rundown.unsynced) {
 				ServerRundownAPI.unsyncRundown(rundown._id)
@@ -239,11 +240,17 @@ export function handleUpdatedRundown (studio0: Studio | undefined, peripheralDev
 	// Lock behind a playlist if it exists
 	const existingRundown = Rundowns.findOne(rundownId)
 	const playlistId = existingRundown ? existingRundown.playlistId : protectString('newPlaylist')
-	return rundownPlaylistSyncFunction(playlistId, RundownSyncFunctionPriority.INGEST, () => handleUpdatedRundownInner(studio, rundownId, ingestRundown, dataSource, peripheralDevice))
+	return rundownPlaylistSyncFunction(playlistId, RundownSyncFunctionPriority.INGEST, () => {
+		const updatedRundown = handleUpdatedRundownInner(studio, rundownId, ingestRundown, dataSource, peripheralDevice)
+		if (updatedRundown) {
+			// Ensure the timeline is updated
+			ensurePlayoutUpdatedFromIngestChange(updatedRundown.getRundownPlaylist(), [], true)
+		}
+	})
 }
-export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId, ingestRundown: IngestRundown, dataSource?: string, peripheralDevice?: PeripheralDevice): boolean  {
+export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId, ingestRundown: IngestRundown, dataSource?: string, peripheralDevice?: PeripheralDevice): Rundown | null {
 	const existingDbRundown = Rundowns.findOne(rundownId)
-	if (!canBeUpdated(existingDbRundown)) return false
+	if (!canBeUpdated(existingDbRundown)) return null
 
 	logger.info((existingDbRundown ? 'Updating' : 'Adding') + ' rundown ' + rundownId)
 
@@ -363,7 +370,7 @@ export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId,
 	}
 	// Save the global adlibs
 	logger.info(`... got ${rundownRes.globalAdLibPieces.length} adLib objects from baseline.`)
-	const adlibItems = postProcessBaselineAdLibPieces(blueprintRundownContext, rundownRes.globalAdLibPieces, showStyle.base.blueprintId)
+	const baselineAdlibItems = postProcessBaselineAdLibPieces(blueprintRundownContext, rundownRes.globalAdLibPieces, showStyle.base.blueprintId)
 
 	// TODO - store notes from rundownNotesContext
 
@@ -406,7 +413,7 @@ export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId,
 		// Save the global adlibs
 		saveIntoDb<RundownBaselineAdLibItem, RundownBaselineAdLibItem>(RundownBaselineAdLibPieces, {
 			rundownId: dbRundown._id
-		}, adlibItems),
+		}, baselineAdlibItems),
 
 		// Update Segments:
 		saveIntoDb(Segments, {
@@ -483,11 +490,13 @@ export function handleUpdatedRundownInner (studio: Studio, rundownId: RundownId,
 	}
 
 	logger.info(`Rundown ${dbRundown._id} update complete`)
-	return didChange
+	return dbRundown
 }
 
 function syncChangesToSelectedPartInstances (playlist: RundownPlaylist, parts: DBPart[], pieces: Piece[]) {
 	// TODO-PartInstances - to be removed once new data flow
+
+	// TODO-ASAP does this need to sync to anything which is a clone (infinite extension) of an updated piece?
 
 	const ps: Array<Promise<any>> = []
 
@@ -633,6 +642,8 @@ function handleRemovedSegment (peripheralDevice: PeripheralDevice, rundownExtern
 			if (removeSegments(rundownId, [segmentId]) === 0) {
 				throw new Meteor.Error(404, `Segment ${segmentExternalId} not found`)
 			}
+
+			ensurePlayoutUpdatedFromIngestChange(rundown.getRundownPlaylist(), [segmentId], false)
 		}
 	})
 }
@@ -647,10 +658,9 @@ function handleUpdatedSegment (peripheralDevice: PeripheralDevice, rundownExtern
 		if (!canBeUpdated(rundown, segmentId)) return
 
 		saveSegmentCache(rundown._id, segmentId, ingestSegment)
-		const updatedSegmentId = updateSegmentFromIngestData(studio, rundown, ingestSegment)
-		if (updatedSegmentId) {
-			afterIngestChangedData(rundown, [updatedSegmentId])
-		}
+		updateSegmentsFromIngestData(studio, rundown, [ingestSegment])
+
+		ensurePlayoutUpdatedFromIngestChange(rundown.getRundownPlaylist(), [segmentId], false)
 	})
 }
 export function updateSegmentsFromIngestData (
@@ -668,6 +678,7 @@ export function updateSegmentsFromIngestData (
 	if (changedSegmentIds.length > 0) {
 		afterIngestChangedData(rundown, changedSegmentIds)
 	}
+	return changedSegmentIds
 }
 /**
  * Run ingestData through blueprints and update the Segment
@@ -780,19 +791,25 @@ function updateSegmentFromIngestData (
 	return anythingChanged(changes) ? segmentId : null
 }
 function afterIngestChangedData (rundown: Rundown, changedSegmentIds: SegmentId[]) {
-	const pPlaylist = asyncCollectionFindOne(RundownPlaylists, { _id: rundown.playlistId })
 	// To be called after rundown has been changed
 	updateExpectedMediaItemsOnRundown(rundown._id)
 	updatePartRanks(rundown)
 	updateSourceLayerInfinitesAfterPart(rundown)
+}
 
-	const playlist = waitForPromise(pPlaylist)
-	if (!playlist) {
-		throw new Meteor.Error(404, `Orphaned rundown ${rundown._id}`)
+export function ensurePlayoutUpdatedFromIngestChange(playlist: RundownPlaylist, changedSegmentIds: SegmentId[], forceTimelineUpdate: boolean) {
+	if (UpdateNext.ensureNextPartIsValid(playlist)) {
+		// If next was changed, then we must change
+		forceTimelineUpdate = true
 	}
-	UpdateNext.ensureNextPartIsValid(playlist)
 
-	triggerUpdateTimelineAfterIngestData(rundown._id, changedSegmentIds)
+	if (playlist.active && playlist.currentPartInstanceId) {
+		const { currentPartInstance, nextPartInstance } = playlist.getSelectedPartInstances()
+		// Only updateTimeline if it is possible that the result could have changed
+		if (currentPartInstance && (forceTimelineUpdate || changedSegmentIds.indexOf(currentPartInstance.segmentId) !== -1 || (currentPartInstance.part.autoNext && nextPartInstance && changedSegmentIds.indexOf(nextPartInstance.segmentId) !== -1))) {
+			updateTimeline(playlist.studioId)
+		}
+	}
 }
 
 export function handleRemovedPart (peripheralDevice: PeripheralDevice, rundownExternalId: string, segmentExternalId: string, partExternalId: string) {
@@ -807,23 +824,20 @@ export function handleRemovedPart (peripheralDevice: PeripheralDevice, rundownEx
 
 		if (!canBeUpdated(rundown, segmentId, partId)) return
 
-		const part = Parts.findOne({
-			_id: partId,
-			segmentId: segmentId,
-			rundownId: rundown._id
-		})
-		if (!part) throw new Meteor.Error(404, 'Part not found')
-
 		// Blueprints will handle the deletion of the Part
 		const ingestSegment = loadCachedIngestSegment(rundown._id, rundownExternalId, segmentId, segmentExternalId)
+		const beforePartCount = ingestSegment.parts.length
 		ingestSegment.parts = ingestSegment.parts.filter(p => p.externalId !== partExternalId)
 
-		saveSegmentCache(rundown._id, segmentId, ingestSegment)
-
-		const updatedSegmentId = updateSegmentFromIngestData(studio, rundown, ingestSegment)
-		if (updatedSegmentId) {
-			afterIngestChangedData(rundown, [updatedSegmentId])
+		if (ingestSegment.parts.length === beforePartCount) {
+			// If we had the ingest data, then the part list would have changed
+			throw new Meteor.Error(404, 'Part not found')
 		}
+
+		saveSegmentCache(rundown._id, segmentId, ingestSegment)
+		updateSegmentsFromIngestData(studio, rundown, [ingestSegment])
+		
+		ensurePlayoutUpdatedFromIngestChange(rundown.getRundownPlaylist(), [segmentId], false)
 	})
 }
 export function handleUpdatedPart (peripheralDevice: PeripheralDevice, rundownExternalId: string, segmentExternalId: string, ingestPart: IngestPart) {
@@ -849,10 +863,9 @@ export function handleUpdatedPartInner (studio: Studio, rundown: Rundown, segmen
 	ingestSegment.parts.push(ingestPart)
 
 	saveSegmentCache(rundown._id, segmentId, ingestSegment)
-	const updatedSegmentId = updateSegmentFromIngestData(studio, rundown, ingestSegment)
-	if (updatedSegmentId) {
-		afterIngestChangedData(rundown, [updatedSegmentId])
-	}
+	updateSegmentsFromIngestData(studio, rundown, [ingestSegment])
+	
+	ensurePlayoutUpdatedFromIngestChange(rundown.getRundownPlaylist(), [segmentId], false)
 }
 
 function generateSegmentContents (
@@ -930,8 +943,8 @@ function generateSegmentContents (
 		}
 
 		// Update pieces
-		// TODO - when the part is invalid, these should either be invalid themselves, or deleted
 		const pieces = postProcessPieces(context, blueprintPart.pieces, blueprintId, part, newSegment)
+		pieces.forEach(p => p.invalid = part.invalid || false) // Ensure we update the invalidity
 		segmentPieces.push(...pieces)
 
 		const adlibs = postProcessAdLibPieces(context, blueprintPart.adLibPieces, blueprintId, part._id)

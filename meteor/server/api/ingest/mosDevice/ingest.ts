@@ -18,7 +18,8 @@ import {
 	RundownSyncFunctionPriority,
 	handleUpdatedRundownInner,
 	handleUpdatedPartInner,
-	updateSegmentsFromIngestData
+	updateSegmentsFromIngestData,
+	ensurePlayoutUpdatedFromIngestChange
 } from '../rundownInput'
 import {
 	loadCachedRundownData,
@@ -29,7 +30,7 @@ import {
 import { Rundown, RundownId, Rundowns } from '../../../../lib/collections/Rundowns'
 import { Studio } from '../../../../lib/collections/Studios'
 import { ShowStyleBases } from '../../../../lib/collections/ShowStyleBases'
-import { Segments } from '../../../../lib/collections/Segments'
+import { Segments, SegmentId } from '../../../../lib/collections/Segments'
 import { loadShowStyleBlueprints } from '../../blueprints/cache'
 import { removeSegments, ServerRundownAPI } from '../../rundown'
 import { UpdateNext } from '../updateNext'
@@ -39,6 +40,7 @@ import { Parts, PartId } from '../../../../lib/collections/Parts'
 import { PartInstances } from '../../../../lib/collections/PartInstances'
 import { Pieces } from '../../../../lib/collections/Pieces';
 import { PieceInstances } from '../../../../lib/collections/PieceInstances';
+import { setNextPart } from '../../playout/lib';
 
 interface AnnotatedIngestPart {
 	externalId: string
@@ -153,13 +155,18 @@ export function handleMosRundownData (
 			payload: mosRunningOrder
 		})
 
-		handleUpdatedRundownInner(
+		const updatedRundown = handleUpdatedRundownInner(
 			studio,
 			rundownId,
 			ingestRundown,
 			createFresh ? 'mosCreate' : 'mosList',
 			peripheralDevice
 		)
+
+		if (updatedRundown) {
+			// Ensure playout is updated
+			ensurePlayoutUpdatedFromIngestChange(updatedRundown.getRundownPlaylist(), [], true)
+		}
 	})
 }
 export function handleMosRundownMetadata (
@@ -191,7 +198,11 @@ export function handleMosRundownMetadata (
 		// TODO - verify this doesn't lose data, it was doing more work before
 
 		// TODO - make this more lightweight?
-		handleUpdatedRundownInner(studio, rundownId, ingestRundown, 'mosRoMetadata', peripheralDevice)
+		const updatedRundown = handleUpdatedRundownInner(studio, rundownId, ingestRundown, 'mosRoMetadata', peripheralDevice)
+		if (updatedRundown) {
+			// Ensure playout is updated
+			ensurePlayoutUpdatedFromIngestChange(updatedRundown.getRundownPlaylist(), [], true)
+		}
 	})
 }
 
@@ -234,6 +245,8 @@ export function handleMosFullStory (peripheralDevice: PeripheralDevice, story: M
 
 		// Update db with the full story:
 		handleUpdatedPartInner(studio, rundown, ingestSegment.externalId, ingestPart)
+
+		ensurePlayoutUpdatedFromIngestChange(rundown.getRundownPlaylist(), [getSegmentId(rundownId, ingestSegment.externalId)], false)
 	})
 }
 export function handleMosDeleteStory (
@@ -275,8 +288,8 @@ export function handleMosDeleteStory (
 
 		logger.debug(`handleMosDeleteStory, new part count ${filteredParts.length} (was ${ingestParts.length})`)
 
-		diffAndApplyChanges(studio, playlist, rundown, ingestRundown, filteredParts)
-		UpdateNext.ensureNextPartIsValid(playlist)
+		const changedSegmentIds = diffAndApplyChanges(studio, playlist, rundown, ingestRundown, filteredParts)
+		ensurePlayoutUpdatedFromIngestChange(playlist, changedSegmentIds, false)
 	})
 }
 
@@ -349,9 +362,27 @@ export function handleInsertParts (
 		// Update parts list
 		ingestParts.splice(insertIndex, 0, ...newParts)
 
-		diffAndApplyChanges(studio, playlist, rundown, ingestRundown, ingestParts)
+		const changedSegmentIds = diffAndApplyChanges(studio, playlist, rundown, ingestRundown, ingestParts)
+		let nextPartChanged = false
+		// If the next part was manual and it was replaced, then try and set the first replacement as next instead
+		if (playlist.nextPartInstanceId && playlist.nextPartManual && removePrevious) {
+			const { nextPartInstance } = playlist.getSelectedPartInstances()
+			const allParts = playlist.getAllOrderedParts()
 
-		UpdateNext.afterInsertParts(playlist, newPartIds, removePrevious)
+			// If the manually chosen part does not exist, assume it was the one that was removed
+			const currentNextPart = nextPartInstance ? allParts.find(part => part._id === nextPartInstance.part._id) : undefined
+			if (!currentNextPart) {
+				// Set to the first of the inserted parts
+				const firstNewPart = allParts.find(part => newPartIds.indexOf(part.externalId) !== -1 && part.isPlayable())
+				if (firstNewPart) {
+					// Matched a part that replaced the old, so set to it
+					setNextPart(playlist, firstNewPart)
+					nextPartChanged = true
+				}
+			}
+		} 
+
+		ensurePlayoutUpdatedFromIngestChange(playlist, changedSegmentIds, nextPartChanged)
 	})
 }
 export function handleSwapStories (
@@ -396,9 +427,8 @@ export function handleSwapStories (
 		ingestParts[story0Index] = ingestParts[story1Index]
 		ingestParts[story1Index] = tmp
 
-		diffAndApplyChanges(studio, playlist, rundown, ingestRundown, ingestParts)
-
-		UpdateNext.ensureNextPartIsValid(playlist)
+		const changedSegmentIds = diffAndApplyChanges(studio, playlist, rundown, ingestRundown, ingestParts)
+		ensurePlayoutUpdatedFromIngestChange(playlist, changedSegmentIds, false)
 	})
 }
 export function handleMoveStories (
@@ -452,9 +482,8 @@ export function handleMoveStories (
 		// Reinsert parts
 		filteredParts.splice(insertIndex, 0, ...movingParts)
 
-		diffAndApplyChanges(studio, playlist, rundown, ingestRundown, filteredParts)
-
-		UpdateNext.ensureNextPartIsValid(playlist)
+		const changedSegmentIds = diffAndApplyChanges(studio, playlist, rundown, ingestRundown, filteredParts)
+		ensurePlayoutUpdatedFromIngestChange(playlist, changedSegmentIds, false)
 	})
 }
 
@@ -464,7 +493,7 @@ function diffAndApplyChanges (
 	rundown: Rundown,
 	ingestRundown: IngestRundown,
 	ingestParts: AnnotatedIngestPart[]
-) {
+): SegmentId[] {
 	// Save the new parts list
 	const groupedParts = groupIngestParts(ingestParts)
 	const ingestSegments = groupedPartsToSegments(rundown._id, groupedParts)
@@ -484,7 +513,7 @@ function diffAndApplyChanges (
 			// Looks like the currently playing part has been removed.
 			logger.warn(`Currently playing part "${currentPartInstance.part._id}" was removed during ingestData. Unsyncing the rundown!`)
 			ServerRundownAPI.unsyncRundown(rundown._id)
-			return
+			return []
 		} else {
 			// TODO: add logic for determining whether to allow changes to the currently playing Part.
 		}
@@ -588,7 +617,7 @@ function diffAndApplyChanges (
 	removeSegments(rundown._id, removedSegmentIds)
 
 	// Create/Update segments
-	updateSegmentsFromIngestData(
+	return updateSegmentsFromIngestData(
 		studio,
 		rundown,
 		_.sortBy([

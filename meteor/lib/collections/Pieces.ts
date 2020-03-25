@@ -58,6 +58,9 @@ export interface Piece extends PieceGeneric, ProtectedStringProperties<Omit<IBlu
 	
 	startPartId: PartId
 	startPartRank: number
+
+	/** This is set when the part is invalid and these pieces should be ignored */
+	invalid: boolean
 	
 	/** This is set when an piece's duration needs to be overriden */
 	userDuration?: Pick<Timeline.TimelineEnable, 'duration' | 'end'>

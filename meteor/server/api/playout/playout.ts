@@ -68,7 +68,7 @@ import { PieceResolved, getResolvedPieces, convertAdLibToPieceInstance, convertP
 import { PackageInfo } from '../../coreSystem'
 import { areThereActiveRundownPlaylistsInStudio } from './studio'
 import { updateSourceLayerInfinitesAfterPart } from './infinites'
-import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority } from '../ingest/rundownInput'
+import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority, ensurePlayoutUpdatedFromIngestChange } from '../ingest/rundownInput'
 import { ServerPlayoutAdLibAPI } from './adlib'
 import { PieceInstances, PieceInstance, PieceInstanceId, PieceInstancePiece } from '../../../lib/collections/PieceInstances'
 import { PartInstances, PartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
@@ -239,7 +239,7 @@ export namespace ServerPlayoutAPI {
 			return ClientAPI.responseSuccess(undefined)
 		})
 	}
-	export function setNextPartInner (
+	function setNextPartInner (
 		playlist: RundownPlaylist,
 		nextPartId: PartId | DBPart | null,
 		setManually?: boolean,
@@ -909,20 +909,10 @@ export namespace ServerPlayoutAPI {
 			}
 
 			refreshPart(rundown, partInstance.part)
+			
+			// Try and update timeline if needed
+			ensurePlayoutUpdatedFromIngestChange(playlist, [partInstance.part.segmentId], false)
 
-			// Only take time to update the timeline if there's a point to do it
-			if (playlist.active) {
-				// If this part is rundown's next, check if current part has autoNext
-				if ((playlist.nextPartInstanceId === partInstance._id) && playlist.currentPartInstanceId) {
-					const currentPartInstance = PartInstances.findOne(playlist.currentPartInstanceId)
-					if (currentPartInstance && currentPartInstance.part.autoNext) {
-						updateTimeline(rundown.studioId)
-					}
-				// If this is rundown's current part, update immediately
-				} else if (playlist.currentPartInstanceId === partInstance._id) {
-					updateTimeline(rundown.studioId)
-				}
-			}
 			return ClientAPI.responseSuccess(undefined)
 		})
 	}

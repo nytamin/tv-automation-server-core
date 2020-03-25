@@ -21,7 +21,6 @@ import {
 	makePromise
 } from '../../lib/lib'
 import { logger } from '../logging'
-import { triggerUpdateTimelineAfterIngestData } from './playout/playout'
 import { registerClassToMeteorMethods } from '../methods'
 import { NewRundownAPI, RundownAPIMethods } from '../../lib/api/rundown'
 import { updateExpectedMediaItemsOnPart } from './expectedMediaItems'
@@ -215,8 +214,6 @@ export function afterRemoveSegments (rundownId: RundownId, segmentIds: SegmentId
 			afterRemoveParts(rundownId, parts)
 		}
 	})
-
-	triggerUpdateTimelineAfterIngestData(rundownId, segmentIds)
 }
 
 /**
@@ -240,7 +237,7 @@ export function afterRemoveParts (rundownId: RundownId, removedParts: DBPart[]) 
 	// Clean up all the db parts that belong to the removed Parts
 	Pieces.remove({
 		rundownId: rundownId,
-		partId: { $in: _.map(removedParts, p => p._id) }
+		startPartId: { $in: _.map(removedParts, p => p._id) }
 	})
 	AdLibPieces.remove({
 		rundownId: rundownId,

@@ -86,6 +86,7 @@ export function getInfinitesStillRunningForPart(showStyleBase: DBShowStyleBase, 
 			// TODO - onEnd types only
 			sourceLayerId: layer._id,
 			startRundownId: { $in: rundownIds },
+			invalid: { $ne: true},
 			$or: [
 				{
 					// same segment, and same/previous part
