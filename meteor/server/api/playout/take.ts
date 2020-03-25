@@ -121,12 +121,17 @@ function startHold(rundownData: RundownPlaylistPlayoutData) {
 		// }))
 
 		// TODO-PartInstance - temporary piece extension, pending new data flow
+		const currentRundownTmp = rundownData.rundownsMap[unprotectString(currentPartInstance.rundownId)]
+		const currentSegmentTmp = rundownData.segmentsMap[unprotectString(currentPartInstance.segmentId)]
 		const newPieceTmp: Piece = {
 			...clone(instance.piece),
 			enable: { start: 0},
 			startPartId: currentPartInstance.part._id,
 			startPartRank: currentPartInstance.part._rank,
-			// TODO - other props?
+			startRundownId: currentPartInstance.rundownId,
+			startRundownRank: currentRundownTmp ? currentRundownTmp._rank : 0,
+			startSegmentId: currentPartInstance.segmentId,
+			startSegmentRank: currentSegmentTmp ? currentSegmentTmp._rank : 0,
 		}
 		const contentTmp = newPieceTmp.content as VTContent
 		if (contentTmp.fileName && contentTmp.sourceDuration && instance.piece.startedPlayback) {
@@ -380,6 +385,7 @@ function copyOverflowingPieces (playoutData: RundownPlaylistPlayoutData, current
 			// adjacent Part isn't the next part, do not overflow
 			return
 		}
+
 		let ps: Array<Promise<any>> = []
 		const currentPieces = currentPartInstance.getAllPieceInstances()
 		currentPieces.forEach((instance) => {
@@ -397,7 +403,6 @@ function copyOverflowingPieces (playoutData: RundownPlaylistPlayoutData, current
 							..._.omit(instance.piece, 'startedPlayback', 'duration', 'overflows'),
 							_id: getRandomId(),
 							startPartId: nextPartInstance.part._id,
-							startPartRank: nextPartInstance.part._rank,
 							enable: {
 								start: 0,
 								duration: remainingDuration,
@@ -411,8 +416,18 @@ function copyOverflowingPieces (playoutData: RundownPlaylistPlayoutData, current
 					playoutData.selectedInstancePieces.push(overflowedItem) // update the cache
 
 					// TODO-PartInstance - pending new data flow
-					ps.push(asyncCollectionInsert(Pieces, overflowedItem.piece))
-					playoutData.pieces.push(overflowedItem.piece) // update the cache
+					const newRundown = playoutData.rundownsMap[unprotectString(nextPartInstance.rundownId)]
+					const newSegment = playoutData.segmentsMap[unprotectString(nextPartInstance.segmentId)]
+					const newOverflowPiece = literal<Piece>({
+						...overflowedItem.piece,
+						startRundownId: overflowedItem.rundownId,
+						startRundownRank: newRundown ? newRundown._rank : 0,
+						startSegmentId: nextPartInstance.segmentId,
+						startSegmentRank: newSegment ? newSegment._rank : 0,
+						startPartRank: nextPartInstance.part._rank,
+					})
+					ps.push(asyncCollectionInsert<Piece, Piece>(Pieces, newOverflowPiece))
+					playoutData.pieces.push(newOverflowPiece) // update the cache
 				}
 			}
 		})

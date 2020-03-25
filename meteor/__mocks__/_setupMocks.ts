@@ -31,6 +31,4 @@ beforeEach(() => {
 	// put setLoggerLevel('info') in the beginning of your test to see logs
 
 	// resetRandomId()
-	restartRandomId()
-	MongoMock.deleteAllData();
 })

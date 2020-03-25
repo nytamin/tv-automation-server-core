@@ -70,7 +70,7 @@ import { areThereActiveRundownPlaylistsInStudio } from './studio'
 import { updateSourceLayerInfinitesAfterPart } from './infinites'
 import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority } from '../ingest/rundownInput'
 import { ServerPlayoutAdLibAPI } from './adlib'
-import { PieceInstances, PieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
+import { PieceInstances, PieceInstance, PieceInstanceId, PieceInstancePiece } from '../../../lib/collections/PieceInstances'
 import { PartInstances, PartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { ReloadRundownPlaylistResponse } from '../../../lib/api/userActions'
 import { takeNextPartInner, afterTake } from './take';
@@ -467,7 +467,7 @@ export namespace ServerPlayoutAPI {
 				}
 
 				const pieceInstances = partInstance.getAllPieceInstances()
-				const sortedPieces: Piece[] = sortPiecesByStart(pieceInstances.map(p => p.piece))
+				const sortedPieces: PieceInstancePiece[] = sortPiecesByStart(pieceInstances.map(p => p.piece))
 
 				let findLast: boolean = !!undo
 
@@ -484,7 +484,7 @@ export namespace ServerPlayoutAPI {
 				)
 				if (findLast) filteredPieces.reverse()
 
-				let nextPiece: Piece | undefined = _.find(filteredPieces, (piece) => {
+				let nextPiece: PieceInstancePiece | undefined = _.find(filteredPieces, (piece) => {
 					logger.info('piece.enable.start', piece.enable.start)
 					return (
 						piece.enable.start >= nowInPart &&

@@ -21,6 +21,7 @@ import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority } from '../ing
 
 import { PieceInstances, PieceInstance, PieceInstanceId, PieceInstancePiece } from '../../../lib/collections/PieceInstances'
 import { PartInstances, PartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
+import { Segments } from '../../../lib/collections/Segments';
 
 export namespace ServerPlayoutAdLibAPI {
 	export function pieceTakeNow (rundownPlaylistId: RundownPlaylistId, partInstanceId: PartInstanceId, pieceInstanceIdOrPieceIdToCopy: PieceInstanceId | PieceId) {
@@ -97,7 +98,16 @@ export namespace ServerPlayoutAdLibAPI {
 
 			PieceInstances.insert(newPieceInstance)
 			// TODO-PartInstance - pending new data flow
-			Pieces.insert(newPieceInstance.piece)
+			const segment = Segments.findOne(partInstance.segmentId)
+			Pieces.insert({
+				...newPieceInstance.piece,
+				startPartId: partInstance.part._id,
+				startPartRank: partInstance.part._rank, // TODO - is this accurate?
+				startSegmentId: partInstance.segmentId,
+				startSegmentRank: segment ? segment._rank : 0,
+				startRundownId: rundown._id,
+				startRundownRank: rundown._rank
+			})
 
 			updateInfinitesForNextedPieceInstance(rundownPlaylist, newPieceInstance.piece.sourceLayerId)
 			updateTimeline(rundown.studioId)
@@ -184,7 +194,16 @@ export namespace ServerPlayoutAdLibAPI {
 
 		PieceInstances.insert(newPieceInstance)
 		// TODO-PartInstance - pending new data flow
-		Pieces.insert(newPieceInstance.piece)
+		const segment = Segments.findOne(partInstance.segmentId)
+		Pieces.insert({
+			...newPieceInstance.piece,
+			startPartId: partInstance.part._id,
+			startPartRank: partInstance.part._rank, // TODO - is this accurate?
+			startSegmentId: partInstance.segmentId,
+			startSegmentRank: segment ? segment._rank : 0,
+			startRundownId: rundown._id,
+			startRundownRank: rundown._rank
+		})
 
 		if (queue) {
 			// TODO - somewhere needs to generate the infinites for this partInstance
@@ -197,7 +216,7 @@ export namespace ServerPlayoutAdLibAPI {
 			}
 		} else {
 			updateInfinitesForNextedPieceInstance(rundownPlaylist, newPieceInstance.piece.sourceLayerId)
-			updateTimeline(rundown.studioId)
+			updateTimeline(rundownPlaylist.studioId)
 		}
 	}
 	function adlibQueueInsertPartInstance (rundownPlaylist: RundownPlaylist, rundown: Rundown, afterPartInstance: PartInstance, adLibPiece: AdLibPieceGeneric): PartInstanceId {

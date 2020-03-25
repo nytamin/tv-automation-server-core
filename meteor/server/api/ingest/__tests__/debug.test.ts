@@ -56,6 +56,7 @@ describe('Test ingest actions for rundowns and segments', () => {
 		expect(playlist).toMatchObject({
 			externalId: rundownData.externalId
 		})
+		expect(rundown.playlistId).toEqual(playlist._id)
 
 		// // Set to unsynced to ensure that flag gets ignored by the debug method
 		// Rundowns.update(rundown._id, {

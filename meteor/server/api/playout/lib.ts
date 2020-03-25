@@ -31,7 +31,7 @@ import { Studios } from '../../../lib/collections/Studios'
 import { DBSegment, Segments } from '../../../lib/collections/Segments'
 import { RundownPlaylist, RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
 import { PartInstance, PartInstances, DBPartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
-import { PieceInstances, PieceInstance, wrapPieceToInstance } from '../../../lib/collections/PieceInstances'
+import { PieceInstances, PieceInstance, wrapPieceToInstance, rewrapPieceToInstance } from '../../../lib/collections/PieceInstances'
 import { ShowStyleBases } from '../../../lib/collections/ShowStyleBases';
 import { PieceLifespan } from 'tv-automation-sofie-blueprints-integration';
 
@@ -463,7 +463,7 @@ export function setNextPart (
 
 			// Copy existing infinites
 			_.each(infinitesToCopy.existingInstances, existingInfinite => {
-				const newInstance = wrapPieceToInstance(existingInfinite.piece, newInstanceId)
+				const newInstance = rewrapPieceToInstance(existingInfinite.piece, rundown._id, newInstanceId)
 				newInstance.rundownId = nextPart.rundownId
 				newInstance.infinite = existingInfinite.infinite
 				pieceInstances.push(newInstance)

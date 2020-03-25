@@ -340,7 +340,6 @@ function updateRundownFromIngestData (
 
 	const rundownPlaylistInfo = produceRundownPlaylistInfo(studio, dbRundownData, peripheralDevice)
 
-	// TODO - wont this wipe out any existing playlist data?
 	const playlistChanges = saveIntoDb(RundownPlaylists, {
 		_id: rundownPlaylistInfo.rundownPlaylist._id
 	}, [rundownPlaylistInfo.rundownPlaylist], {
@@ -589,15 +588,21 @@ function handleUpdatedRundownPlaylist (currentRundown: DBRundown, playlist: DBRu
 	const ps: Array<Promise<any>> = []
 
 	rundowns.forEach(r => {
-		const newRank = order[unprotectString(r._id)]
+		const updateRundown: Partial<DBRundown> = {}
+		
+		if (r.playlistId !== playlist._id) {
+			updateRundown.playlistId = playlist._id
+		}
+
+		// Ensure that the default case is smooth
+		let newRank = order[unprotectString(r._id)]
+		if (newRank === undefined && rundowns.length === 0) {
+			newRank = 0
+		}
+
 		if (newRank !== undefined) {
-			if (r.playlistId !== playlist._id || r._rank !== newRank) {
-				ps.push(asyncCollectionUpdate(Rundowns, r._id, {
-					$set: {
-						playlistId: playlist._id,
-						_rank: newRank
-					}
-				}))
+			if (r._rank !== newRank) {
+				updateRundown._rank = newRank
 
 				// Update any pieces that cache this info
 				ps.push(asyncCollectionUpdate(Pieces, {
@@ -610,6 +615,18 @@ function handleUpdatedRundownPlaylist (currentRundown: DBRundown, playlist: DBRu
 			}
 		} else {
 			// an unranked Rundown is essentially "floated" - it is a part of the playlist, but it shouldn't be visible in the UI
+		}
+
+		// Apply change if anything there
+		if (Object.keys(updateRundown).length > 0) {
+			ps.push(asyncCollectionUpdate(Rundowns, r._id, {
+				$set: updateRundown
+			}))
+
+			// Update local copy
+			if (currentRundown._id === r._id) {
+				Object.assign(currentRundown, updateRundown)
+			}
 		}
 	})
 

@@ -131,85 +131,88 @@ export function findLookaheadForlayer (
 		})
 	}
 
-	// Track the previous info for checking how the timeline will be built
-	let previousPartInfo: PartAndPieces | undefined
-	if (playoutData.previousPartInstance) {
-		const previousPieces = getPartInstancePieces(playoutData.previousPartInstance._id)
-		previousPartInfo = {
-			part: playoutData.previousPartInstance.part,
-			pieces: previousPieces.map(p => p.piece)
-		}
-	}
+	// TODO - rethink?
 
-	// Get the PieceInstances which are on the timeline
-	const partInstancesOnTimeline = _.compact([
-		playoutData.currentPartInstance,
-		playoutData.currentPartInstance && playoutData.currentPartInstance.part.autoNext ? playoutData.nextPartInstance : undefined
-	])
-	// Generate timed objects for parts on the timeline
-	_.each(partInstancesOnTimeline, partInstance => {
-		const pieces = _.filter(playoutData.selectedInstancePieces, (pieceInstance: PieceInstance) => {
-			return !!(
-				pieceInstance.partInstanceId === partInstance._id &&
-				pieceInstance.piece.content &&
-				pieceInstance.piece.content.timelineObjects &&
-				_.find(pieceInstance.piece.content.timelineObjects, (o) => (o && o.layer === layer))
-			)
-		})
-		const partInfo = {
-			part: partInstance.part,
-			pieces: pieces.map(p => p.piece)
-		}
+	
+	// // Track the previous info for checking how the timeline will be built
+	// let previousPartInfo: PartAndPieces | undefined
+	// if (playoutData.previousPartInstance) {
+	// 	const previousPieces = getPartInstancePieces(playoutData.previousPartInstance._id)
+	// 	previousPartInfo = {
+	// 		part: playoutData.previousPartInstance.part,
+	// 		pieces: previousPieces.map(p => p.piece)
+	// 	}
+	// }
 
-		findObjectsForPart(playoutData, layer, previousPartInfo, partInfo, partInstance._id)
-			.forEach(o => res.timed.push({ obj: o, partId: partInstance.part._id }))
-		previousPartInfo = partInfo
-	})
+	// // Get the PieceInstances which are on the timeline
+	// const partInstancesOnTimeline = _.compact([
+	// 	playoutData.currentPartInstance,
+	// 	playoutData.currentPartInstance && playoutData.currentPartInstance.part.autoNext ? playoutData.nextPartInstance : undefined
+	// ])
+	// // Generate timed objects for parts on the timeline
+	// _.each(partInstancesOnTimeline, partInstance => {
+	// 	const pieces = _.filter(playoutData.selectedInstancePieces, (pieceInstance: PieceInstance) => {
+	// 		return !!(
+	// 			pieceInstance.partInstanceId === partInstance._id &&
+	// 			pieceInstance.piece.content &&
+	// 			pieceInstance.piece.content.timelineObjects &&
+	// 			_.find(pieceInstance.piece.content.timelineObjects, (o) => (o && o.layer === layer))
+	// 		)
+	// 	})
+	// 	const partInfo = {
+	// 		part: partInstance.part,
+	// 		pieces: pieces.map(p => p.piece)
+	// 	}
 
-	// find all pieces that touch the layer
-	const piecesUsingLayer = _.filter(playoutData.pieces, (piece: Piece) => {
-		return !!(
-			piece.content &&
-			piece.content.timelineObjects &&
-			_.find(piece.content.timelineObjects, (o) => (o && o.layer === layer))
-		)
-	})
-	if (piecesUsingLayer.length === 0) {
-		return res
-	}
+	// 	findObjectsForPart(playoutData, layer, previousPartInfo, partInfo, partInstance._id)
+	// 		.forEach(o => res.timed.push({ obj: o, partId: partInstance.part._id }))
+	// 	previousPartInfo = partInfo
+	// })
 
-	// nextPartInstance should always have a backing part (if it exists), so this will be safe
-	const nextPart = selectNextPart(_.last(partInstancesOnTimeline) || playoutData.previousPartInstance || null, playoutData.parts)
-	const futureParts = nextPart ? playoutData.parts.slice(nextPart.index) : []
-	if (futureParts.length === 0) {
-		return res
-	}
+	// // find all pieces that touch the layer
+	// const piecesUsingLayer = _.filter(playoutData.pieces, (piece: Piece) => {
+	// 	return !!(
+	// 		piece.content &&
+	// 		piece.content.timelineObjects &&
+	// 		_.find(piece.content.timelineObjects, (o) => (o && o.layer === layer))
+	// 	)
+	// })
+	// if (piecesUsingLayer.length === 0) {
+	// 	return res
+	// }
 
-	// have pieces grouped by part, so we can look based on rank to choose the correct one
-	const piecesUsingLayerByPart: {[partId: string]: Piece[] | undefined} = {}
-	piecesUsingLayer.forEach(i => {
-		const partId = unprotectString(i.startPartId)
-		if (!piecesUsingLayerByPart[partId]) {
-			piecesUsingLayerByPart[partId] = []
-		}
+	// // nextPartInstance should always have a backing part (if it exists), so this will be safe
+	// const nextPart = selectNextPart(_.last(partInstancesOnTimeline) || playoutData.previousPartInstance || null, playoutData.parts)
+	// const futureParts = nextPart ? playoutData.parts.slice(nextPart.index) : []
+	// if (futureParts.length === 0) {
+	// 	return res
+	// }
 
-		piecesUsingLayerByPart[partId]!.push(i)
-	})
+	// // have pieces grouped by part, so we can look based on rank to choose the correct one
+	// const piecesUsingLayerByPart: {[partId: string]: Piece[] | undefined} = {}
+	// piecesUsingLayer.forEach(i => {
+	// 	const partId = unprotectString(i.startPartId)
+	// 	if (!piecesUsingLayerByPart[partId]) {
+	// 		piecesUsingLayerByPart[partId] = []
+	// 	}
 
-	for (const part of futureParts) {
-		// Stop if we have enough objects already
-		if (res.future.length >= lookaheadDepth) {
-			break
-		}
+	// 	piecesUsingLayerByPart[partId]!.push(i)
+	// })
 
-		const pieces = piecesUsingLayerByPart[unprotectString(part._id)] || []
-		if (pieces.length > 0 && part.isPlayable()) {
-			const partInfo = { part, pieces }
-			findObjectsForPart(playoutData, layer, previousPartInfo, partInfo, null)
-				.forEach(o => res.future.push({ obj: o, partId: part._id }))
-			previousPartInfo = partInfo
-		}
-	}
+	// for (const part of futureParts) {
+	// 	// Stop if we have enough objects already
+	// 	if (res.future.length >= lookaheadDepth) {
+	// 		break
+	// 	}
+
+	// 	const pieces = piecesUsingLayerByPart[unprotectString(part._id)] || []
+	// 	if (pieces.length > 0 && part.isPlayable()) {
+	// 		const partInfo = { part, pieces }
+	// 		findObjectsForPart(playoutData, layer, previousPartInfo, partInfo, null)
+	// 			.forEach(o => res.future.push({ obj: o, partId: part._id }))
+	// 		previousPartInfo = partInfo
+	// 	}
+	// }
 
 	return res
 }

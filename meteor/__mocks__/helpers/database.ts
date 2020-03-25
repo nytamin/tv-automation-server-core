@@ -49,6 +49,8 @@ import { DBRundownPlaylist, RundownPlaylist, RundownPlaylists, RundownPlaylistId
 import { RundownBaselineAdLibItem, RundownBaselineAdLibPieces } from '../../lib/collections/RundownBaselineAdLibPieces'
 import { AdLibPiece, AdLibPieces } from '../../lib/collections/AdLibPieces'
 import { string } from 'prop-types'
+import { MongoMock } from '../mongo';
+import { restartRandomId } from '../random';
 
 export enum LAYER_IDS {
 	SOURCE_CAM0 = 'cam0',
@@ -369,6 +371,8 @@ export interface DefaultEnvironment {
 	ingestDevice: PeripheralDevice
 }
 export function setupDefaultStudioEnvironment (): DefaultEnvironment {
+	restartRandomId()
+	MongoMock.deleteAllData();
 
 	const core = setupMockCore({})
 

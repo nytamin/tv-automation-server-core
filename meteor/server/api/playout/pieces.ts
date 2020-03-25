@@ -35,7 +35,7 @@ export interface PieceResolved extends Piece {
 	/** Whether the piece was successfully resolved */
 	resolved: boolean
 }
-export function sortPiecesByStart (pieces: Piece[]): Piece[] {
+export function sortPiecesByStart<T extends PieceInstancePiece> (pieces: T[]): T[] {
 	pieces.sort((a, b) => {
 		if (a.enable.start < b.enable.start) {
 			return -1
