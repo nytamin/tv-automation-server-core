@@ -1,6 +1,6 @@
 import * as _ from 'underscore'
 import { Time, applyClassToDocument, getCurrentTime, registerCollection, asyncCollectionFindFetch, ProtectedString, ProtectId, ProtectedStringProperties } from '../lib'
-import { Segments, DBSegment, Segment } from './Segments'
+import { Segments, DBSegment, Segment, SegmentId } from './Segments'
 import { Parts, Part, DBPart } from './Parts'
 import { FindOptions, MongoSelector, TransformedCollection } from '../typings/meteor'
 import { Studios, Studio, StudioId } from './Studios'
@@ -182,15 +182,20 @@ export class Rundown implements DBRundown {
 	/**
 	 * Return ordered lists of all Segments and Parts in the rundown
 	 */
-	async getSegmentsAndParts (): Promise<{ segments: Segment[], parts: Part[] }> {
-
-		const pSegments = asyncCollectionFindFetch(Segments, {
+	async getSegmentsAndParts (onlySegmentIds?: SegmentId[]): Promise<{ segments: Segment[], parts: Part[] }> {
+		const segmentFilter: MongoSelector<Segment> = {
 			rundownId: this._id
-		}, { sort: { _rank: 1 } })
-
-		const pParts = asyncCollectionFindFetch(Parts, {
+		}
+		const partFilter: MongoSelector<Part> = {
 			rundownId: this._id
-		}, { sort: { _rank: 1 } })
+		}
+		if (onlySegmentIds) {
+			segmentFilter._id = { $in: onlySegmentIds }
+			partFilter.segmentId = { $in: onlySegmentIds }
+		}
+
+		const pSegments = asyncCollectionFindFetch(Segments, segmentFilter, { sort: { _rank: 1 } })
+		const pParts = asyncCollectionFindFetch(Parts, partFilter, { sort: { _rank: 1 } })
 
 		const segments = await pSegments
 		return {

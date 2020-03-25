@@ -264,7 +264,7 @@ export namespace ServerPlayoutAdLibAPI {
 		// TODO-PartInstance - pending new data flow
 		Parts.insert(newPart)
 
-		updatePartRanks(rundown) // place in order
+		updatePartRanks(rundown, [newPart.segmentId]) // place in order
 
 		return newPartInstanceId
 	}

@@ -59,7 +59,7 @@ export interface DBPart extends ProtectedStringProperties<IBlueprintPartDB, '_id
 
 	/** Holds notes (warnings / errors) thrown by the blueprints during creation */
 	notes?: Array<PartNote>
-	/** if the part is inserted after another (for adlibbing) */
+	/** if the part is inserted after another (for adlibbing) */ // TODO-ASAP combine with dynamicallyInserted (call dynamicallyAfterPart)
 	afterPart?: PartId
 	/** if the part was dunamically inserted (adlib) */
 	dynamicallyInserted?: boolean

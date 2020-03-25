@@ -793,7 +793,7 @@ function updateSegmentFromIngestData (
 function afterIngestChangedData (rundown: Rundown, changedSegmentIds: SegmentId[]) {
 	// To be called after rundown has been changed
 	updateExpectedMediaItemsOnRundown(rundown._id)
-	updatePartRanks(rundown)
+	updatePartRanks(rundown, changedSegmentIds)
 	updateSourceLayerInfinitesAfterPart(rundown)
 }
 

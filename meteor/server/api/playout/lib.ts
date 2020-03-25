@@ -22,6 +22,7 @@ import {
 	unprotectString,
 	protectString,
 	omit,
+	saveIntoDb,
 } from '../../../lib/lib'
 import { TimelineObjGeneric } from '../../../lib/collections/Timeline'
 import { loadCachedIngestSegment } from '../ingest/ingestCache'
@@ -34,6 +35,7 @@ import { PartInstance, PartInstances, DBPartInstance, PartInstanceId } from '../
 import { PieceInstances, PieceInstance, wrapPieceToInstance, rewrapPieceToInstance } from '../../../lib/collections/PieceInstances'
 import { ShowStyleBases } from '../../../lib/collections/ShowStyleBases';
 import { PieceLifespan } from 'tv-automation-sofie-blueprints-integration';
+import { afterRemoveParts } from '../rundown';
 
 /**
  * Reset the rundown:
@@ -601,11 +603,15 @@ function resetPart (part: DBPart): Promise<void> {
 		multi: true
 	}))
 	// remove parts that have been dynamically queued for after this part (queued adLibs)
-	ps.push(asyncCollectionRemove(Parts, {
+	saveIntoDb(Parts, {
 		rundownId: part.rundownId,
 		afterPart: part._id,
 		dynamicallyInserted: true
-	}))
+	}, [], {
+		afterRemoveAll(removedParts) {
+			afterRemoveParts(part.rundownId, removedParts)
+		}
+	})
 
 	// Remove all pieces that have been dynamically created (such as adLib pieces)
 	ps.push(asyncCollectionRemove(Pieces, {
