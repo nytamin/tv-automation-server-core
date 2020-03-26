@@ -302,7 +302,7 @@ export function updatePartRanks (rundown: Rundown, segmentIds: SegmentId[]) {
 			for(let i = 0; i < sortedParts.length - 1;) {
 				// Find the range to process this iteration
 				const beforePartIndex = i;
-				const afterPartIndex = sortedParts.findIndex((p, o) => o > i && !!p.dynamicallyInserted)
+				const afterPartIndex = sortedParts.findIndex((p, o) => o > i && !p.dynamicallyInserted)
 
 				if (afterPartIndex === beforePartIndex + 1) {
 					// no dynamic parts in between
@@ -317,13 +317,13 @@ export function updatePartRanks (rundown: Rundown, segmentIds: SegmentId[]) {
 				}
 
 				const firstDynamicIndex = beforePartIndex + 1
-				const lastDynamicIndex = afterPartIndex === -1 ? sortedParts.length : afterPartIndex - 1
+				const lastDynamicIndex = afterPartIndex === -1 ? sortedParts.length - 1 : afterPartIndex - 1
 
 				// Calculate the rank change per part
 				const dynamicPartCount = lastDynamicIndex - firstDynamicIndex + 1
 				const basePartRank = sortedParts[beforePartIndex]._rank
 				const afterPartRank = afterPartIndex === -1 ? basePartRank + 1 : sortedParts[afterPartIndex]._rank
-				const delta = (afterPartRank - basePartRank) / dynamicPartCount
+				const delta = (afterPartRank - basePartRank) / (dynamicPartCount + 1)
 
 				let prevRank = basePartRank
 				for (let o = firstDynamicIndex; o <= lastDynamicIndex; o++) {

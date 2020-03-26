@@ -30,7 +30,7 @@ export namespace UpdateNext {
 				if (isTooCloseToAutonext(currentPartInstance) && nextPartInstance) {
 					return false
 				}
-
+				
 				// Set to the newly selected part
 				setNextPart(playlist, newNextPart ? newNextPart.part : null)
 				return true

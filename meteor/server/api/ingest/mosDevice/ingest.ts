@@ -519,7 +519,6 @@ function diffAndApplyChanges (
 		}
 	}
 
-
 	// Save new cache
 	const newIngestRundown = _.clone(ingestRundown)
 	newIngestRundown.segments = ingestSegments

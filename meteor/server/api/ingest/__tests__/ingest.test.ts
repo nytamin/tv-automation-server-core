@@ -929,7 +929,7 @@ describe('Test ingest actions for rundowns and segments', () => {
 		expect(Parts.findOne(dynamicPartId)).toBeTruthy()
 
 		// Let the logic generate the correct rank first
-		updatePartRanks(rundown)
+		updatePartRanks(rundown, [part.segmentId])
 		let dynamicPart = Parts.findOne(dynamicPartId) as Part
 		expect(dynamicPart).toBeTruthy()
 		expect(dynamicPart._rank).toEqual(1.5) // TODO - this value is bad
@@ -1024,14 +1024,14 @@ describe('Test ingest actions for rundowns and segments', () => {
 			title: 'Dynamic',
 			typeVariant: 'dynamic',
 			dynamicallyInserted: true,
-			afterPart: part._id
+			afterPart: protectString('dynamic1')
 		})
 		expect(Parts.findOne(protectString('dynamic0'))).toBeTruthy()
 		expect(Parts.findOne(protectString('dynamic1'))).toBeTruthy()
 		expect(Parts.findOne(protectString('dynamic2'))).toBeTruthy()
 
 		// Let the logic generate the correct rank first
-		updatePartRanks(rundown)
+		updatePartRanks(rundown, [part.segmentId])
 
 		let part1 = Parts.findOne({ externalId: 'part1' }) as Part
 		expect(part1._rank).toEqual(1)
