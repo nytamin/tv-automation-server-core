@@ -45,7 +45,6 @@ export interface PieceGeneric extends IBlueprintPieceGeneric {
 	playoutDuration?: number
 
 	isTransition?: boolean
-	extendOnHold?: boolean
 }
 
 export interface Piece extends PieceGeneric, ProtectedStringProperties<Omit<IBlueprintPieceDB, '_id' | 'continuesRefId'>, 'infiniteId'> {

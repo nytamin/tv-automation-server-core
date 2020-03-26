@@ -82,18 +82,6 @@ export function resetRundown (rundown: Rundown) {
 		})
 	})
 
-	// Reset all pieces that were modified for holds
-	Pieces.update({
-		rundownId: rundown._id,
-		extendOnHold: true,
-		infiniteId: { $exists: true },
-	}, {
-		$unset: {
-			infiniteId: 0,
-			infiniteMode: 0,
-		}
-	}, { multi: true })
-
 	// // Reset any pieces that were modified by inserted adlibs
 	// Pieces.update({
 	// 	startRundownId: rundown._id,
@@ -212,20 +200,6 @@ export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
 			dirty: 1
 		}})
 	})
-
-	// Reset all pieces that were modified for holds
-	Pieces.update({
-		rundownId: {
-			$in: rundownIDs
-		},
-		extendOnHold: true,
-		infiniteId: { $exists: true },
-	}, {
-		$unset: {
-			infiniteId: 0,
-			infiniteMode: 0,
-		}
-	}, { multi: true })
 
 	// // Reset any pieces that were modified by inserted adlibs
 	// Pieces.update({
@@ -474,8 +448,8 @@ export function setNextPart (
 			_.each(infinitesToCopy.newInfinites, newInfinite => {
 				const newInstance = wrapPieceToInstance({
 					...newInfinite,
-					startPartId: newInfinite.startPartId,
-					startPartRank: newInfinite.startPartRank
+					// startPartId: newInfinite.startPartId,
+					// startPartRank: newInfinite.startPartRank
 				}, newInstanceId)
 				newInstance.rundownId = nextPart.rundownId
 				newInstance.infinite = {

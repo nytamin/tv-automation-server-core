@@ -75,23 +75,16 @@ import { PieceInstance } from '../../../lib/collections/PieceInstances'
  * @param studioId id of the studio to update
  * @param forceNowToTime if set, instantly forces all "now"-objects to that time (used in autoNext)
  */
-export const updateTimeline: (studioId: StudioId, forceNowToTime?: Time, playoutData0?: RundownPlaylistPlayoutData | null) => void
-= syncFunctionIgnore(function updateTimeline (studioId: StudioId, forceNowToTime?: Time, playoutData0?: RundownPlaylistPlayoutData | null) {
+export const updateTimeline: (studioId: StudioId, forceNowToTime?: Time) => void
+= syncFunctionIgnore(function updateTimeline (studioId: StudioId, forceNowToTime?: Time) {
 	logger.debug('updateTimeline running...')
 	let timelineObjs: Array<TimelineObjGeneric> = []
 	const pStudio = asyncCollectionFindOne(Studios, studioId)
 
 	let playoutData: RundownPlaylistPlayoutData | null = null
-
-	if (playoutData0 === undefined) {
-		// When activeRundownData0 is not provided:
-
-		const activePlaylist = waitForPromise(getActiveRundown(studioId))
-		if (activePlaylist) {
-			playoutData = activePlaylist.fetchAllPlayoutData()
-		}
-	} else {
-		playoutData = playoutData0
+	const activePlaylist = waitForPromise(getActiveRundown(studioId))
+	if (activePlaylist) {
+		playoutData = activePlaylist.fetchAllPlayoutData()
 	}
 
 	const activeRundown = playoutData && playoutData.rundownPlaylist

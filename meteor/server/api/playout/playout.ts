@@ -44,7 +44,7 @@ import {
 	reportPieceHasStopped
 } from '../asRunLog'
 import { Blueprints } from '../../../lib/collections/Blueprints'
-import { RundownPlaylist, RundownPlaylists, RundownPlaylistPlayoutData, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
+import { RundownPlaylist, RundownPlaylists, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
 import { getBlueprintOfRundown } from '../blueprints/cache'
 import { PartEventContext, RundownContext } from '../blueprints/context'
 import { IngestActions } from '../ingest/actions'
@@ -709,11 +709,7 @@ export namespace ServerPlayoutAPI {
 						logger.error(`PartInstance "${playingPartInstance._id}" has started playback by the playout gateway, but has not been selected for playback!`)
 					}
 
-					// Load the latest data and complete the take
-					const rundownPlaylist = RundownPlaylists.findOne(rundown.playlistId)
-					if (!rundownPlaylist) throw new Meteor.Error(404, `RundownPlaylist "${rundown.playlistId}", parent of rundown "${rundown._id}" not found!`)
-
-					afterTake(rundownPlaylist.fetchAllPlayoutData(), playingPartInstance)
+					afterTake(playlist.studioId, playingPartInstance)
 				}
 			} else {
 				throw new Meteor.Error(404, `PartInstance "${partInstanceId}" in rundown "${rundownId}" not found!`)

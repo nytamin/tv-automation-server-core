@@ -34,6 +34,8 @@ export interface PieceInstance extends ProtectedStringProperties<Omit<IBlueprint
 		infinitePieceId: PieceId
 		// lifespan: PieceLifespan // In case the original piece gets destroyed/mutated? // TODO - is this wanted?
 		// TODO - more properties?
+		/** When the instance was a copy made from hold */
+		fromHold?: boolean
 	}
 }
 

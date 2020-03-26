@@ -54,13 +54,9 @@ export interface RundownPlaylistPlayoutData {
 	/** Ordered array of the Rundowns in a Playlist */
 	rundowns: Rundown[],
 	rundownsMap: { [key: string]: Rundown },
-	/** Ordered array of the Segments in a Playlist */
-	segments: Segment[],
-	segmentsMap: { [key: string]: Segment},
-	/** Ordered array of the Parts in a Playlist */
-	parts: Part[],
-	partsMap: { [key: string]: Part },
-	pieces: Piece[]
+	// /** Ordered array of the Segments in a Playlist */
+	// segments: Segment[],
+	// segmentsMap: { [key: string]: Segment},
 
 	currentPartInstance: PartInstance | undefined
 	nextPartInstance: PartInstance | undefined
@@ -336,8 +332,7 @@ export class RundownPlaylist implements DBRundownPlaylist {
 			this.nextPartInstanceId
 		])
 
-		const pSegmentsAndParts = this.getSegmentsAndParts(rundowns)
-		const pPieces = asyncCollectionFindFetch(Pieces, { startRundownId: { $in: rundownIds } })
+		// const pSegments = makePromise(() => this.getSegments(rundowns))
 		const pSelectedInstancePieces = asyncCollectionFindFetch(PieceInstances, {
 			rundownId: { $in: rundownIds },
 			partInstanceId: { $in: partInstanceIds }
@@ -345,23 +340,11 @@ export class RundownPlaylist implements DBRundownPlaylist {
 		const pSelectedPartInstances = makePromise(() => this.getSelectedPartInstances(rundownIds))
 
 		// Do fetches in parallell:
-		const segmentsAndParts = waitForPromise(pSegmentsAndParts)
-		const pieces = waitForPromise(pPieces)
+		// const segments = waitForPromise(pSegments)
 		const selectedPartInstances = waitForPromise(pSelectedPartInstances)
 		const selectedInstancePieces = waitForPromise(pSelectedInstancePieces)
 
-		// Force to use preloaded pieces when possible
-		_.each(segmentsAndParts.parts, part => {
-			part.getAllPieces = () => {
-				return _.map(_.filter(pieces, (piece) => {
-					return (
-						piece.startPartId === part._id
-					)
-				}), (part) => {
-					return _.clone(part)
-				})
-			}
-		})
+		// Force to use preloaded data when possible
 		_.each(_.values(selectedPartInstances), partInstance => {
 			if (partInstance) {
 				partInstance.getAllPieceInstances = () => {
@@ -380,11 +363,8 @@ export class RundownPlaylist implements DBRundownPlaylist {
 			rundownPlaylist: this,
 			rundowns,
 			rundownsMap: normalizeArray(rundowns, '_id'),
-			segments: segmentsAndParts.segments,
-			segmentsMap: normalizeArray(segmentsAndParts.segments, '_id'),
-			parts: segmentsAndParts.parts,
-			partsMap: normalizeArray(segmentsAndParts.parts, '_id'),
-			pieces,
+			// segments: segments,
+			// segmentsMap: normalizeArray(segments, '_id'),
 			...selectedPartInstances,
 			selectedInstancePieces
 		}
