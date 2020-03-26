@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { Piece } from '../../../../lib/collections/Pieces'
 import { SplitsContent, SourceLayerType } from 'tv-automation-sofie-blueprints-integration'
+import { PieceInstancePiece } from '../../../../lib/collections/PieceInstances';
 
 // @todo: use colours from the scss
 // @todo: split can use any source (rather than cam + live)
-export default class SplitInputIcon extends React.Component<{ abbreviation?: string, piece?: Piece }> {
-	getCameraLabel (piece: Piece | undefined) {
+export default class SplitInputIcon extends React.Component<{ abbreviation?: string, piece?: PieceInstancePiece }> {
+	getCameraLabel (piece: PieceInstancePiece | undefined) {
 		if (piece && piece.content) {
 			let c = piece.content as SplitsContent
 			const camera = c.boxSourceConfiguration.find(i => i.type === SourceLayerType.CAMERA)
@@ -35,7 +36,7 @@ export default class SplitInputIcon extends React.Component<{ abbreviation?: str
 		return ''
 	}
 
-	getLeftSourceType (piece: Piece | undefined): string {
+	getLeftSourceType (piece: PieceInstancePiece | undefined): string {
 		if (piece && piece.content) {
 			let c = piece.content as SplitsContent
 			const left = (c.boxSourceConfiguration[0] || {}).type || SourceLayerType.CAMERA
@@ -44,7 +45,7 @@ export default class SplitInputIcon extends React.Component<{ abbreviation?: str
 		return 'camera'
 	}
 
-	getRightSourceType (piece: Piece | undefined): string {
+	getRightSourceType (piece: PieceInstancePiece | undefined): string {
 		if (piece && piece.content) {
 			let c = piece.content as SplitsContent
 			const right = (c.boxSourceConfiguration[1] || {}).type || SourceLayerType.REMOTE

@@ -5,7 +5,7 @@ import { setLoggerLevel } from '../logger'
 import { setupDefaultStudioEnvironment, LAYER_IDS } from '../../../__mocks__/helpers/database'
 import { DBPart, Parts, PartId } from '../../../lib/collections/Parts'
 import { VTContent, PieceLifespan } from 'tv-automation-sofie-blueprints-integration'
-import { Segments, DBSegment } from '../../../lib/collections/Segments'
+import { Segments, DBSegment, SegmentId } from '../../../lib/collections/Segments'
 import { Pieces, Piece, PieceId } from '../../../lib/collections/Pieces'
 import { RundownAPI } from '../../../lib/api/rundown'
 import { updateExpectedMediaItemsOnRundown, updateExpectedMediaItemsOnPart } from '../expectedMediaItems'
@@ -109,10 +109,16 @@ describe('Expected Media Items', () => {
 			externalId: '',
 			metaData: {},
 			outputLayerId: LAYER_IDS.OUTPUT_PGM,
-			partId: protectString(rdId + '_' + mockPart0),
-			rundownId: rdId,
+			startRundownId: rdId,
+			startRundownRank: 0,
+			startSegmentId: protectString(''),
+			startSegmentRank: 1,
+			startPartId: protectString(rdId + '_' + mockPart0),
+			startPartRank: 1,
 			sourceLayerId: LAYER_IDS.SOURCE_VT0,
 			status: RundownAPI.PieceStatusCode.UNKNOWN,
+			lifespan: PieceLifespan.WithinPart,
+			invalid: false,
 			content: literal<VTContent>({
 				fileName: mockFileName0,
 				path: mockPath0,
@@ -148,10 +154,16 @@ describe('Expected Media Items', () => {
 			externalId: '',
 			metaData: {},
 			outputLayerId: LAYER_IDS.OUTPUT_PGM,
-			partId: protectString(rdId + '_' + mockPart1),
-			rundownId: rdId,
+			startRundownId: rdId,
+			startRundownRank: 0,
+			startSegmentId: protectString(''),
+			startSegmentRank: 1,
+			startPartId: protectString(rdId + '_' + mockPart1),
+			startPartRank: 1,
 			sourceLayerId: LAYER_IDS.SOURCE_VT0,
 			status: RundownAPI.PieceStatusCode.UNKNOWN,
+			lifespan: PieceLifespan.WithinPart,
+			invalid: false,
 			content: literal<VTContent>({
 				fileName: mockFileName1,
 				path: mockPath1,

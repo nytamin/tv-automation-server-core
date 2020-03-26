@@ -5,10 +5,9 @@ import { testInFiber } from '../../__mocks__/helpers/jest'
 import { buildFormatString, acceptFormat, getAcceptedFormats, getMediaObjectMediaId, checkPieceContentStatus } from '../mediaObjects'
 import { MediaObjects, MediaInfo, MediaObject, FieldOrder, MediaStream, Anomaly, MediaStreamType } from './../collections/MediaObjects'
 import { literal, protectString } from '../lib'
-import { ISourceLayer, SourceLayerType } from 'tv-automation-sofie-blueprints-integration'
+import { ISourceLayer, SourceLayerType, IBlueprintPieceGeneric, PieceLifespan } from 'tv-automation-sofie-blueprints-integration'
 import { IStudioSettings } from '../collections/Studios'
 import { RundownAPI } from '../api/rundown'
-import { IBlueprintPieceGeneric } from '../collections/Pieces'
 
 
 describe('lib/mediaObjects', () => {
@@ -82,6 +81,7 @@ describe('lib/mediaObjects', () => {
 			name: '',
 			sourceLayerId: '',
 			outputLayerId: '',
+			lifespan: PieceLifespan.WithinPart,
 			content: {
 				fileName: 'test'
 			}
@@ -98,6 +98,7 @@ describe('lib/mediaObjects', () => {
 			name: '',
 			sourceLayerId: '',
 			outputLayerId: '',
+			lifespan: PieceLifespan.OutOnSegmentEnd,
 			content: {
 				fileName: 'TEST'
 			}
@@ -114,6 +115,7 @@ describe('lib/mediaObjects', () => {
 			name: '',
 			sourceLayerId: '',
 			outputLayerId: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
 			content: {}
 		}), literal<ISourceLayer>({
 			_id: '',
@@ -201,7 +203,7 @@ describe('lib/mediaObjects', () => {
 			metaData: {},
 			outputLayerId: '',
 			sourceLayerId: '',
-			partId: protectString(''),
+			lifespan: PieceLifespan.WithinPart,
 			content: {
 				fileName: 'test_file'
 			}
@@ -283,7 +285,7 @@ describe('lib/mediaObjects', () => {
 			metaData: {},
 			outputLayerId: '',
 			sourceLayerId: '',
-			partId: protectString(''),
+			lifespan: PieceLifespan.WithinPart,
 			content: {
 				fileName: 'test_file_2'
 			}
@@ -296,7 +298,7 @@ describe('lib/mediaObjects', () => {
 			metaData: {},
 			outputLayerId: '',
 			sourceLayerId: '',
-			partId: protectString(''),
+			lifespan: PieceLifespan.WithinPart,
 			content: {
 				fileName: 'test_file_3'
 			}

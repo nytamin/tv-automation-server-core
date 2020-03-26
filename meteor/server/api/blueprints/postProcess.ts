@@ -37,7 +37,8 @@ export function postProcessPieces (innerContext: RundownContext, pieces: IBluepr
 			startSegmentRank: segment._rank,
 			startPartId: part._id,
 			startPartRank: part._rank,
-			status: RundownAPI.PieceStatusCode.UNKNOWN
+			status: RundownAPI.PieceStatusCode.UNKNOWN,
+			invalid: false
 		}
 
 		if (!piece.externalId && !piece.isTransition) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" externalId not set for piece in ${part._id}! ("${innerContext.unhashId(unprotectString(piece._id))}")`)
