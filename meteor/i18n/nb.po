@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: i18next-conv\n"
-"POT-Creation-Date: 2020-03-23T12:03:30.423Z\n"
-"PO-Revision-Date: 2020-03-23 13:19+0100\n"
+"POT-Creation-Date: 2020-03-27T11:39:56.204Z\n"
+"PO-Revision-Date: 2020-03-27 12:55+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: nb\n"
@@ -159,10 +159,10 @@ msgstr "Synkroniser kjøreplanen med ENPS på nytt?"
 msgid "Re-Sync"
 msgstr "Synkroniser"
 
-#, fuzzy
-#| msgid "Are you sure you want to delete recording \"{{name}}\"?"
 msgid "Are you sure you want to re-sync all rundowns in playlist \"{{name}}\"?"
-msgstr "Er du sikker på at du vil slette opptaket \"{{name}}\"?"
+msgstr ""
+"Er du sikker på at du vil synkronisere alle kjøreplanene i kjøreplanlisten "
+"\"{{name}}\" på nytt?"
 
 msgid "This rundown is currently active"
 msgstr "Denne kjøreplanen er allerede aktiv"
@@ -472,10 +472,8 @@ msgstr ""
 "Kjøreplan {{rundownName}} i listen {{playlistName}} finnes ikke. Hva vil du "
 "gjøre?"
 
-#, fuzzy
-#| msgid "Mark rundown as unsynced"
 msgid "Mark the rundown as unsynced"
-msgstr "Marker kjøreplan som usynkronisert"
+msgstr "Merk kjøreplan som usynkronisert"
 
 msgid "Remove just the rundown"
 msgstr "Fjern bare kjøreplan"
@@ -843,22 +841,18 @@ msgstr "Blueprintversjon"
 msgid "Upload Blueprints"
 msgstr "Last opp blueprints"
 
-#, fuzzy
 msgid "Spreadsheet credentials succesfully uploaded."
 msgstr "Opplasting av Spreadsheet Credentials var vellykket."
 
-#, fuzzy
 msgid "Failed to upload spreadsheet credentials: {{errorMessage}}"
 msgstr "Opplasting av Spreadsheet Credentials feilet: {{errorMessage}}"
 
-#, fuzzy
 msgid "Application credentials"
 msgstr "Brukernavn/passord"
 
 msgid "Access token"
 msgstr "Tilgangskode (Access Token)"
 
-#, fuzzy
 msgid ""
 "Click on the link below and accept the permissions request. Paste the "
 "received URL below."
@@ -866,9 +860,8 @@ msgstr ""
 "Klikk på linken under og godta permissions-forespørselen. Lim deretter inn "
 "adressen (url-en) du får oppgitt i feltet under."
 
-#, fuzzy
 msgid "Waiting for gateway to generate URL..."
-msgstr "Venter på at Gateway genererer url..."
+msgstr "Venter på at Gateway skal generere url..."
 
 msgid "Device ID"
 msgstr "Enhets-id"
@@ -915,7 +908,6 @@ msgstr "Tillat lesing"
 msgid "Allow Write"
 msgstr "Tillat skriving/lagring"
 
-#, fuzzy
 msgid "Base Path"
 msgstr "Rotsti"
 
@@ -934,7 +926,6 @@ msgstr "Passord"
 msgid "Don't Scan Entire Storage"
 msgstr "Ikke scan hele lagringsområdet"
 
-#, fuzzy
 msgid "Base path is a network share"
 msgstr "Rotsti er til en nettverksressurs"
 
@@ -1127,7 +1118,6 @@ msgstr ""
 msgid "Connect some devices to the playout gateway"
 msgstr "Koble til en eller flere enheter til playout gatewayen"
 
-#, fuzzy
 msgid ""
 "Go to the url below and click on the \"Enable the Drive API\" button. Then "
 "click on \"Download Client configuration\", save the credentials.json file "
@@ -1728,9 +1718,8 @@ msgstr "Modus"
 msgid "Preset"
 msgstr ""
 
-#, fuzzy
 msgid "Preset Transition Speed"
-msgstr "Effekt"
+msgstr ""
 
 msgid "Zoom"
 msgstr "Zoom"
@@ -2058,11 +2047,13 @@ msgid ""
 "Are you sure you want to restart this Sofie Automation Server Core: {{name}}?"
 msgstr "Er du sikker på at du vil starte Sofie Core: {{name}} på nytt?"
 
+#, fuzzy
 msgid "Could not generate restart token!"
-msgstr ""
+msgstr "Kunne ikke generere Restart Token!"
 
+#, fuzzy
 msgid "Could not generate restart core: {{err}}"
-msgstr ""
+msgstr "Kunne ikke generere Restart Core: {{err}}"
 
 msgid "Sofie Automation Server Core will restart in {{time}}s..."
 msgstr "Sofie Core restartes om {{time}}s..."
@@ -2098,7 +2089,7 @@ msgid "Enable hints by adding this to the URL:"
 msgstr "Aktiver hint ved å legge dette til på url-en:"
 
 msgid "More documentation available at:"
-msgstr "Mer dokumentasjon er tilgjengelig på"
+msgstr "Mer dokumentasjon er tilgjengelig på:"
 
 msgid "Recordings"
 msgstr "Opptak"
