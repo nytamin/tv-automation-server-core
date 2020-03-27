@@ -50,7 +50,8 @@ import {
 	unprotectString,
 	unprotectObjectArray,
 	unprotectObject,
-	normalizeArrayFunc
+	normalizeArrayFunc,
+	makePromise
 } from '../../../lib/lib'
 import { RundownPlaylistPlayoutData, RundownPlaylist, RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
 import { Rundowns, Rundown, RundownHoldState } from '../../../lib/collections/Rundowns'
@@ -223,23 +224,27 @@ function getTimelineRundown (studio: Studio, playoutData: RundownPlaylistPlayout
 				const pshowStyleBlueprint = getBlueprintOfRundownAsync(activeRundown)
 
 				// Fetch baseline
-				let promiseBaselineItems: Promise<Array<RundownBaselineObj>> = asyncCollectionFindFetch(RundownBaselineObjs, {
+				const pBaselineItems: Promise<Array<RundownBaselineObj>> = asyncCollectionFindFetch(RundownBaselineObjs, {
 					rundownId: activeRundown._id
 				})
 
-				// Default timelineobjects:
-				let baselineItems = waitForPromise(promiseBaselineItems)
+				const pLookaheadObjs = makePromise(() => getLookeaheadObjects(rundownData, studio))
 
-				timelineObjs = timelineObjs.concat(buildTimelineObjsForRundown(rundownData, baselineItems))
+				const rundownItems = buildTimelineObjsForRundown(rundownData)
 
+				// Wait for everything to be ready
+				const baselineItems = waitForPromise(pBaselineItems)
+				const lookaheadObjs = waitForPromise(pLookaheadObjs)
 
-				// next (on pvw (or on pgm if first))
-				timelineObjs = timelineObjs.concat(getLookeaheadObjects(rundownData, studio))
-
+				if (baselineItems) {
+					timelineObjs = timelineObjs.concat(transformBaselineItemsIntoTimeline(baselineItems))
+				}
+				
+				timelineObjs = timelineObjs.concat(rundownItems)
+				timelineObjs = timelineObjs.concat(lookaheadObjs)
 
 				const showStyleBlueprint0 = waitForPromise(pshowStyleBlueprint)
 				const showStyleBlueprintManifest = showStyleBlueprint0.blueprint
-
 
 				if (showStyleBlueprintManifest.onTimelineGenerate && rundownData.currentPartInstance) {
 					const currentPart = rundownData.currentPartInstance
@@ -399,7 +404,7 @@ function setNowToTimeInObjects (timelineObjs: Array<TimelineObjGeneric>, now: Ti
 	})
 }
 
-function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, baselineItems: RundownBaselineObj[]): (TimelineObjRundown & OnGenerateTimelineObj)[] {
+function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData): (TimelineObjRundown & OnGenerateTimelineObj)[] {
 	const activePlaylist = playoutData.rundownPlaylist
 
 	let timelineObjs: Array<TimelineObjRundown & OnGenerateTimelineObj> = []
@@ -440,10 +445,6 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData, b
 			previousPartInstance = playoutData.previousPartInstance
 			if (!previousPartInstance) logger.warning(`Previous PartInstance "${playoutData.rundownPlaylist.previousPartInstanceId}" not found!`)
 		}
-	}
-
-	if (baselineItems) {
-		timelineObjs = timelineObjs.concat(transformBaselineItemsIntoTimeline(baselineItems))
 	}
 
 	// Currently playing:
