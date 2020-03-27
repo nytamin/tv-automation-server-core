@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Lookahead Calculations findLookaheadForlayer layer should produce something 1`] = `
+Object {
+  "future": Array [
+    Object {
+      "obj": Object {
+        "_id": "",
+        "content": Object {},
+        "enable": Object {
+          "start": 0,
+        },
+        "id": "find-this-obj",
+        "infinitePieceId": undefined,
+        "layer": "layer1",
+        "objectType": "rundown",
+        "pieceInstanceId": "piece0",
+        "studioId": "",
+      },
+      "partId": "part3",
+    },
+  ],
+  "timed": Array [],
+}
+`;
+
+exports[`Lookahead Calculations findLookaheadForlayer layer should produce something 2`] = `
+Object {
+  "future": Array [
+    Object {
+      "obj": Object {
+        "_id": "",
+        "content": Object {},
+        "enable": Object {
+          "start": 0,
+        },
+        "id": "find-this-obj",
+        "infinitePieceId": undefined,
+        "layer": "layer1",
+        "objectType": "rundown",
+        "pieceInstanceId": "piece0",
+        "studioId": "",
+      },
+      "partId": "part3",
+    },
+  ],
+  "timed": Array [
+    Object {
+      "obj": Object {
+        "_id": "",
+        "enable": Object {
+          "start": 0,
+        },
+        "id": "some-obj",
+        "infinitePieceId": undefined,
+        "layer": "layer1",
+        "objectType": "rundown",
+        "pieceInstanceId": "partInstance1_undefined",
+        "studioId": "",
+      },
+      "partId": "part1",
+    },
+    Object {
+      "obj": Object {
+        "_id": "",
+        "content": Object {},
+        "enable": Object {
+          "start": 0,
+        },
+        "id": "some-obj3",
+        "infinitePieceId": undefined,
+        "layer": "layer1",
+        "objectType": "rundown",
+        "pieceInstanceId": "partInstance2_undefined",
+        "studioId": "",
+      },
+      "partId": "part2",
+    },
+    Object {
+      "obj": Object {
+        "_id": "",
+        "content": Object {},
+        "enable": Object {
+          "start": 0,
+        },
+        "id": "some-obj4",
+        "infinitePieceId": undefined,
+        "layer": "layer1",
+        "objectType": "rundown",
+        "pieceInstanceId": "partInstance2_undefined",
+        "studioId": "",
+      },
+      "partId": "part2",
+    },
+  ],
+}
+`;

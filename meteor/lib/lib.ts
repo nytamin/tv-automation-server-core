@@ -857,7 +857,17 @@ export function mongoWhere<T> (o: any, selector: MongoSelector<T>): boolean {
 			let keyWords = key.split('.')
 			if (keyWords.length > 1) {
 				let oAttr = o[keyWords[0]]
-				if (oAttr && _.isObject(oAttr)) {
+				if (oAttr && _.isArray(oAttr)) {
+					let innerSelector: any = {}
+					innerSelector[keyWords.slice(1).join('.')] = s
+
+					// One of
+					ok = false
+					for (const newObj of oAttr) {
+						ok = ok || mongoWhere(newObj, innerSelector)
+					}
+
+				} else if (oAttr && _.isObject(oAttr)) {
 					let innerSelector: any = {}
 					innerSelector[keyWords.slice(1).join('.')] = s
 					ok = mongoWhere(oAttr, innerSelector)

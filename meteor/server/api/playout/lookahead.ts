@@ -12,7 +12,6 @@ import { PieceInstance, wrapPieceToInstance, PieceInstancePiece, rewrapPieceToIn
 import { selectNextPart } from './lib'
 import { PartInstanceId, PartInstance } from '../../../lib/collections/PartInstances'
 import { Rundown, RundownId } from '../../../lib/collections/Rundowns';
-import { Segments } from '../../../lib/collections/Segments';
 
 const LOOKAHEAD_OBJ_PRIORITY = 0.1
 
@@ -51,33 +50,8 @@ export function getLookeaheadObjects (playoutData: RundownPlaylistPlayoutData, s
 	const nextNextPart = selectNextPart(playoutData.nextPartInstance || playoutData.currentPartInstance || null, orderedParts)
 	let futureParts: Part[] = []
 	if (nextNextPart) {
-		// We have a 'next' part to look from
-		const startRundown = playoutData.rundownsMap[unprotectString(nextNextPart.part.rundownId)]
-		const startSegment = Segments.findOne(nextNextPart.part.segmentId)
-		if (!startRundown || !startSegment) {
-			// TODO - log error
-		} else {
-			futureParts = orderedParts.slice(nextNextPart.index)
-		}
+		futureParts = orderedParts.slice(nextNextPart.index)
 	}
-
-	// const queryFragment: Mongo.Query<Piece>[] = [
-	// 	{
-	// 		// same rundown and segment
-	// 		startRundownId: startRundown._id,
-	// 		startSegmentId: startSegment._id,
-	// 		startPartRank: { $gte: nextNextPart.part._rank }
-	// 	},
-	// 	{
-	// 		// same rundown, and later segments
-	// 		startRundownId: startRundown._id,
-
-	// 	},
-	// 	{
-	// 		// later rundown
-	// 		startRundownRank: { $gt: startRundown._rank }
-	// 	}
-	// ]
 
 	const ps = _.map(studio.mappings || {}, (mapping: MappingExt, layerId: string) => {
 		// This runs some db queries, so lets try and run in parallel whenever possible
@@ -179,7 +153,7 @@ export function findLookaheadForlayer (
 			)
 		})
 
-		const newObjs = findObjectsForPart(playoutData.rundownPlaylist, layer, previousPart, partInstance.part, pieces.map(p => p.piece), partInstance)
+		const newObjs = findObjectsForPart(playoutData.rundownPlaylist.currentPartInstanceId, layer, previousPart, partInstance.part, pieces.map(p => p.piece), partInstance)
 		const isAutonext = playoutData.currentPartInstance && playoutData.currentPartInstance.part.autoNext
 		if (playoutData.rundownPlaylist.nextPartInstanceId === partInstance._id && !isAutonext) {
 			// The next instance should be future objects if not in an autonext
@@ -208,16 +182,8 @@ export function findLookaheadForlayer (
 		'content.timelineObjects.layer': layer,
 		startRundownId: { $in: rundownIds },
 		startPartId: { $in: futurePartIds }
-		// $or: followingPiecesQueryFragment,
 	}, {
 		limit: lookaheadDepth * 2, // TODO - is this enough because some could be dropped due to being transitions?
-		// sort: {
-		// 	startRundownRank: -1,
-		// 	startSegmentRank: -1,
-		// 	startPartRank: -1,
-		// 	'enable.start': -1,
-		// 	_id: 1 // Ensure order is stable
-		// },
 		fields: {
 			startPartId: 1
 		}
@@ -245,7 +211,7 @@ export function findLookaheadForlayer (
 
 		const pieces = piecesUsingLayerByPart[unprotectString(part._id)] || []
 		if (pieces.length > 0 && part.isPlayable()) {
-			findObjectsForPart(playoutData.rundownPlaylist, layer, previousPart, part, pieces, null)
+			findObjectsForPart(playoutData.rundownPlaylist.currentPartInstanceId, layer, previousPart, part, pieces, null)
 				.forEach(o => res.future.push({ obj: o, partId: part._id }))
 		}
 		previousPart = part
@@ -254,8 +220,8 @@ export function findLookaheadForlayer (
 	return res
 }
 
-function findObjectsForPart (
-	rundownPlaylist: RundownPlaylist,
+export function findObjectsForPart (
+	currentPartInstanceId: PartInstanceId | null,
 	layer: string,
 	previousPart: Part | undefined,
 	part: Part,
@@ -299,16 +265,16 @@ function findObjectsForPart (
 		return allObjs
 	} else { // They need to be ordered
 		// TODO - this needs to consider infinites properly... In what way?
-		const orderedItems = sortPiecesByStart(pieces)
+		const orderedPieces = sortPiecesByStart(pieces)
 
 		let allowTransition = false
 		let classesFromPreviousPart: string[] = []
-		if (previousPart && rundownPlaylist.currentPartInstanceId) { // If we have a previous and not at the start of the rundown
+		if (previousPart && currentPartInstanceId) { // If we have a previous and not at the start of the rundown
 			allowTransition = !previousPart.disableOutTransition
 			classesFromPreviousPart = previousPart.classesForNext || []
 		}
 
-		const transObj = orderedItems.find(i => !!i.isTransition)
+		const transObj = orderedPieces.find(i => !!i.isTransition)
 		const transObj2 = transObj ? pieces.find(l => l._id === transObj._id) : undefined
 		const hasTransition = (
 			allowTransition &&
@@ -319,20 +285,18 @@ function findObjectsForPart (
 		)
 
 		const res: TimelineObjRundown[] = []
-		orderedItems.forEach(i => {
-			if (!part || (!allowTransition && i.isTransition)) {
+		orderedPieces.forEach(piece => {
+			if (!part || (!allowTransition && piece.isTransition)) {
 				return
 			}
-
-			const piece = pieces.find(l => l._id === i._id)
-			if (!piece || !piece.content || !piece.content.timelineObjects) {
+			if (!piece.content || !piece.content.timelineObjects) {
 				return
 			}
 
 			// If there is a transition and this piece is abs0, it is assumed to be the primary piece and so does not need lookahead
 			if (
 				hasTransition &&
-				!i.isTransition &&
+				!piece.isTransition &&
 				piece.enable.start === 0 // <-- need to discuss this!
 			) {
 				return

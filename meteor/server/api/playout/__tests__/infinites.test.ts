@@ -173,7 +173,8 @@ function setupBaseMockInfinitesRundown() {
 		lifespan: PieceLifespan.OutOnRundownEnd,
 		sourceLayerId: 'bad-layer',
 		outputLayerId: 'pgm',
-		enable: { start: 0 }
+		enable: { start: 0 },
+		invalid: false
 	})
 }
 
@@ -198,7 +199,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnRundownEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 
 		{
@@ -246,7 +248,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnRundownEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 		Pieces.insert({
 			_id: id1,
@@ -263,7 +266,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnRundownEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 
 		{
@@ -293,6 +297,47 @@ describe('Infinites Calculations', () => {
 			expect(result).toHaveLength(0)
 		}
 	})
+	testInFiber('Ignore invalid', () => {
+		const id0 = protectString('infinite0')
+		Pieces.insert({
+			_id: id0,
+			startRundownId: Ids.rundown0,
+			startRundownRank: Ids.rundown0Rank,
+			startSegmentId: Ids.segment0_0,
+			startSegmentRank: Ids.segment0_0Rank,
+			startPartId: Ids.part0_0_0,
+			startPartRank: Ids.part0_0_0Rank,
+	
+			externalId: '',
+			status: 0,
+			name: '',
+			lifespan: PieceLifespan.OutOnRundownEnd,
+			sourceLayerId: 'layer0',
+			outputLayerId: 'pgm',
+			enable: { start: 0 },
+			invalid: false
+		})
+
+		{
+			// Infinite is valid
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			expect(result).toHaveLength(1)
+			expect(result[0]._id).toEqual(id0)
+		}
+
+		// Mark infinite as invalid
+		Pieces.update(id0, {
+			$set: {
+				invalid: true
+			}
+		})
+
+		{
+			// Infinite is invalid
+			const result = getInfinitesStillRunningForPart(Fakes.showStyleBase, rundownIds, Fakes.rundown0, Fakes.segment0_0, Fakes.part0_0_1)
+			expect(result).toHaveLength(0)
+		}
+	})
 	testInFiber('OnSegmentEnd isolated lifetime', () => {
 		const id = protectString('infinite0')
 		Pieces.insert({
@@ -310,7 +355,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnSegmentEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 
 		{
@@ -357,7 +403,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnRundownEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 		Pieces.insert({
 			_id: id1,
@@ -374,7 +421,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnSegmentEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 
 		{
@@ -428,7 +476,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.OutOnRundownEnd,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 		Pieces.insert({
 			_id: id1,
@@ -445,7 +494,8 @@ describe('Infinites Calculations', () => {
 			lifespan: PieceLifespan.WithinPart,
 			sourceLayerId: 'layer0',
 			outputLayerId: 'pgm',
-			enable: { start: 0 }
+			enable: { start: 0 },
+			invalid: false
 		})
 
 		{

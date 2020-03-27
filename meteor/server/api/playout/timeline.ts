@@ -519,24 +519,24 @@ function buildTimelineObjsForRundown (playoutData: RundownPlaylistPlayoutData): 
 			}
 
 			if (piece.piece.infiniteId) {
-				// TODO-PartInstance - this will be wrong once infinites work on only the instances
-				const originalItem = _.find(playoutData.pieces, (p => p._id === piece.piece.infiniteId))
+				// // TODO-PartInstance - this will be wrong once infinites work on only the instances
+				// const originalItem = _.find(playoutData.pieces, (p => p._id === piece.piece.infiniteId))
 
-				// If we are a continuation, set the same start point to ensure that anything timed is correct
-				if (originalItem && originalItem.startedPlayback) {
-					infiniteGroup.enable = { start: originalItem.startedPlayback }
+				// // If we are a continuation, set the same start point to ensure that anything timed is correct
+				// if (originalItem && originalItem.startedPlayback) {
+				// 	infiniteGroup.enable = { start: originalItem.startedPlayback }
 
-					// If an absolute time has been set by a hotkey, then update the duration to be correct
-					const partStartedPlayback = currentPartInstance.part.getLastStartedPlayback()
-					if (piece.piece.userDuration && partStartedPlayback) {
-						const previousPartsDuration = (partStartedPlayback - originalItem.startedPlayback)
-						if (piece.piece.userDuration.end) {
-							infiniteGroup.enable.end = piece.piece.userDuration.end
-						} else {
-							infiniteGroup.enable.duration = offsetTimelineEnableExpression(piece.piece.userDuration.duration, previousPartsDuration)
-						}
-					}
-				}
+				// 	// If an absolute time has been set by a hotkey, then update the duration to be correct
+				// 	const partStartedPlayback = currentPartInstance.part.getLastStartedPlayback()
+				// 	if (piece.piece.userDuration && partStartedPlayback) {
+				// 		const previousPartsDuration = (partStartedPlayback - originalItem.startedPlayback)
+				// 		if (piece.piece.userDuration.end) {
+				// 			infiniteGroup.enable.end = piece.piece.userDuration.end
+				// 		} else {
+				// 			infiniteGroup.enable.duration = offsetTimelineEnableExpression(piece.piece.userDuration.duration, previousPartsDuration)
+				// 		}
+				// 	}
+				// }
 			}
 
 			// Still show objects flagged as 'HoldMode.EXCEPT' if this is a infinite continuation as they belong to the previous too
