@@ -12,7 +12,7 @@ import { RundownBaselineAdLibPieces } from '../../../lib/collections/RundownBase
 import { RundownPlaylists, RundownPlaylist, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
 import { Pieces, Piece, PieceId } from '../../../lib/collections/Pieces'
 import { Parts, Part, DBPart } from '../../../lib/collections/Parts'
-import { prefixAllObjectIds, setNextPart, getPartBeforeSegment, getPreviousPart } from './lib'
+import { prefixAllObjectIds, setNextPart } from './lib'
 import { updateInfinitesForNextedPieceInstance } from './infinites'
 import { convertAdLibToPieceInstance, getResolvedPieces, convertPieceToAdLibPiece } from './pieces'
 import { updateTimeline } from './timeline'

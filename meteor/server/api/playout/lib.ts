@@ -290,16 +290,6 @@ export function getPartBeforeSegment (rundownId: RundownId, dbSegment: DBSegment
 	}
 	return undefined
 }
-export function getPartsAfter (part: Part, partsInRundownInOrder: Part[]): Part[] {
-	let found = false
-	// Only process parts after part:
-	const partsAfter = partsInRundownInOrder.filter(p => {
-		if (found) return true
-		if (p._id === part._id) found = true
-		return false
-	})
-	return partsAfter
-}
 export function getPreviousPart (dbPart: DBPart, rundown: Rundown) {
 
 	let prevPart: Part | undefined = undefined

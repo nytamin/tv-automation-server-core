@@ -10,7 +10,6 @@ import { asyncCollectionUpdate, waitForPromiseAll, asyncCollectionRemove, asyncC
 import { PartInstance, PartInstances, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { PieceInstances, PieceInstance } from '../../../lib/collections/PieceInstances'
 import { RundownPlaylist } from '../../../lib/collections/RundownPlaylists'
-import { getPartsAfter } from './lib'
 import { SegmentId, Segment, Segments, DBSegment } from '../../../lib/collections/Segments'
 import { ShowStyleBase, DBShowStyleBase } from '../../../lib/collections/ShowStyleBases'
 

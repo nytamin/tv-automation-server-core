@@ -19,7 +19,6 @@ import {
 	resetRundownPlaylist as libResetRundownPlaylist,
 	setNextPart as libSetNextPart,
 	onPartHasStoppedPlaying,
-	getPartBeforeSegment,
 	selectNextPart,
 	isTooCloseToAutonext
 } from './lib'
