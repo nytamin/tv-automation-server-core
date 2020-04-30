@@ -38,7 +38,7 @@ import { TSR } from 'tv-automation-sofie-blueprints-integration'
  * Reset the rundown:
  * Remove all dynamically inserted/updated pieces, parts, timings etc..
  */
-export function resetRundown (rundown: Rundown) {
+export function resetRundown(rundown: Rundown) {
 	logger.info('resetRundown ' + rundown._id)
 	// Remove all dunamically inserted pieces (adlibs etc)
 
@@ -141,12 +141,12 @@ export function resetRundown (rundown: Rundown) {
  * Reset the rundownPlaylist (all of the rundowns within the playlist):
  * Remove all dynamically inserted/updated pieces, parts, timings etc..
  */
-export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
+export function resetRundownPlaylist(rundownPlaylist: RundownPlaylist) {
 	logger.info('resetRundownPlaylist ' + rundownPlaylist._id)
 	// Remove all dunamically inserted pieces (adlibs etc)
 	const rundowns = rundownPlaylist.getRundowns()
 	const rundownIDs = rundowns.map(i => i._id)
-	const rundownLookup = _.object(rundowns.map(i => [ i._id, i ])) as { [key: string]: Rundown }
+	const rundownLookup = _.object(rundowns.map(i => [i._id, i])) as { [key: string]: Rundown }
 
 	PartInstances.update({
 		rundownId: {
@@ -205,9 +205,11 @@ export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
 	}).fetch()
 	dirtyParts.forEach(part => {
 		refreshPart(rundownLookup[unprotectString(part.rundownId)], part)
-		Parts.update(part._id, {$unset: {
-			dirty: 1
-		}})
+		Parts.update(part._id, {
+			$unset: {
+				dirty: 1
+			}
+		})
 	})
 
 	// Reset all pieces that were modified for holds
@@ -256,7 +258,7 @@ export function resetRundownPlaylist (rundownPlaylist: RundownPlaylist) {
 
 	resetRundownPlaylistPlayhead(rundownPlaylist)
 }
-function resetRundownPlaylistPlayhead (rundownPlaylist: RundownPlaylist) {
+function resetRundownPlaylistPlayhead(rundownPlaylist: RundownPlaylist) {
 	logger.info('resetRundownPlayhead ' + rundownPlaylist._id)
 	const rundowns = rundownPlaylist.getRundowns()
 	const rundown = _.first(rundowns)
@@ -301,7 +303,7 @@ function resetRundownPlaylistPlayhead (rundownPlaylist: RundownPlaylist) {
 		setNextPart(rundownPlaylist, null)
 	}
 }
-export function getPartBeforeSegment (rundownId: RundownId, dbSegment: DBSegment): Part | undefined {
+export function getPartBeforeSegment(rundownId: RundownId, dbSegment: DBSegment): Part | undefined {
 	const prevSegment = Segments.findOne({
 		rundownId: rundownId,
 		_rank: { $lt: dbSegment._rank }
@@ -314,7 +316,7 @@ export function getPartBeforeSegment (rundownId: RundownId, dbSegment: DBSegment
 	}
 	return undefined
 }
-export function getPartsAfter (part: Part, partsInRundownInOrder: Part[]): Part[] {
+export function getPartsAfter(part: Part, partsInRundownInOrder: Part[]): Part[] {
 	let found = false
 	// Only process parts after part:
 	const partsAfter = partsInRundownInOrder.filter(p => {
@@ -324,7 +326,7 @@ export function getPartsAfter (part: Part, partsInRundownInOrder: Part[]): Part[
 	})
 	return partsAfter
 }
-export function getPreviousPart (dbPart: DBPart, rundown: Rundown) {
+export function getPreviousPart(dbPart: DBPart, rundown: Rundown) {
 
 	let prevPart: Part | undefined = undefined
 	for (let p of rundown.getParts()) {
@@ -333,7 +335,7 @@ export function getPreviousPart (dbPart: DBPart, rundown: Rundown) {
 	}
 	return prevPart
 }
-export function refreshPart (dbRundown: DBRundown, dbPart: DBPart) {
+export function refreshPart(dbRundown: DBRundown, dbPart: DBPart) {
 	const ingestSegment = loadCachedIngestSegment(dbRundown._id, dbRundown.externalId, dbPart.segmentId, unprotectString(dbPart.segmentId))
 
 	const studio = Studios.findOne(dbRundown.studioId)
@@ -351,10 +353,10 @@ export function refreshPart (dbRundown: DBRundown, dbPart: DBPart) {
 	// updateSourceLayerInfinitesAfterPart(rundown, prevPart)
 }
 
-export function selectNextPart (rundownPlaylist: RundownPlaylist, previousPartInstance: PartInstance | null, parts: Part[]): { part: Part, index: number} | undefined {
+export function selectNextPart(rundownPlaylist: RundownPlaylist, previousPartInstance: PartInstance | null, parts: Part[]): { part: Part, index: number } | undefined {
 	const findFirstPlayablePart = (offset: number, condition?: (part: Part) => boolean) => {
 		// Filter to after and find the first playabale
-		for (let index = offset; index < parts.length; index ++) {
+		for (let index = offset; index < parts.length; index++) {
 			const part = parts[index]
 			if (part.isPlayable() && (!condition || condition(part))) {
 				return { part, index }
@@ -387,9 +389,12 @@ export function selectNextPart (rundownPlaylist: RundownPlaylist, previousPartIn
 	}
 
 	// Filter to after and find the first playabale
-	return nextPart || findFirstPlayablePart(offset)
+	return nextPart ||
+		findFirstPlayablePart(offset) ||
+		// if the rundownPlaylist is loopable, go from the top once no playable parts found
+		(rundownPlaylist.loop ? findFirstPlayablePart(0) : undefined)
 }
-export function setNextPart (
+export function setNextPart(
 	rundownPlaylist: RundownPlaylist,
 	rawNextPart: DBPart | DBPartInstance | null,
 	setManually?: boolean,
@@ -564,7 +569,7 @@ export function setNextPart (
 
 	waitForPromiseAll(ps)
 }
-export function setNextSegment (
+export function setNextSegment(
 	rundownPlaylist: RundownPlaylist,
 	nextSegment: Segment | null
 ) {
@@ -597,7 +602,7 @@ export function setNextSegment (
 	}
 }
 
-function resetPart (part: DBPart): Promise<void> {
+function resetPart(part: DBPart): Promise<void> {
 	let ps: Array<Promise<any>> = []
 
 
@@ -664,10 +669,10 @@ function resetPart (part: DBPart): Promise<void> {
 			if (!rundown) throw new Meteor.Error(404, `Rundown "${part.rundownId}" not found!`)
 
 			Promise.all(ps)
-			.then(() => {
-				refreshPart(rundown, part)
-				resolve()
-			}).catch((e) => reject())
+				.then(() => {
+					refreshPart(rundown, part)
+					resolve()
+				}).catch((e) => reject())
 		})
 	} else {
 		const rundown = Rundowns.findOne(part.rundownId)
@@ -676,13 +681,13 @@ function resetPart (part: DBPart): Promise<void> {
 
 
 		return Promise.all(ps)
-		.then(() => {
-			updateSourceLayerInfinitesAfterPart(rundown, prevPart)
-			// do nothing
-		})
+			.then(() => {
+				updateSourceLayerInfinitesAfterPart(rundown, prevPart)
+				// do nothing
+			})
 	}
 }
-export function onPartHasStoppedPlaying (partInstance: PartInstance, stoppedPlayingTime: Time) {
+export function onPartHasStoppedPlaying(partInstance: PartInstance, stoppedPlayingTime: Time) {
 	const lastStartedPlayback = partInstance.part.getLastStartedPlayback()
 	if (partInstance.part.startedPlayback && lastStartedPlayback && lastStartedPlayback > 0) {
 		PartInstances.update(partInstance._id, {
@@ -704,7 +709,7 @@ export function onPartHasStoppedPlaying (partInstance: PartInstance, stoppedPlay
 	}
 }
 
-export function substituteObjectIds (rawEnable: TSR.Timeline.TimelineEnable, idMap: { [oldId: string]: string | undefined }) {
+export function substituteObjectIds(rawEnable: TSR.Timeline.TimelineEnable, idMap: { [oldId: string]: string | undefined }) {
 	const replaceIds = (str: string) => {
 		return str.replace(/#([a-zA-Z0-9_]+)/g, (m) => {
 			const id = m.substr(1, m.length - 1)
@@ -722,7 +727,7 @@ export function substituteObjectIds (rawEnable: TSR.Timeline.TimelineEnable, idM
 
 	return enable
 }
-export function prefixAllObjectIds<T extends TimelineObjGeneric> (objList: T[], prefix: string, ignoreOriginal?: boolean): T[] {
+export function prefixAllObjectIds<T extends TimelineObjGeneric>(objList: T[], prefix: string, ignoreOriginal?: boolean): T[] {
 	const getUpdatePrefixedId = (o: T) => {
 		let id = o.id
 		if (!ignoreOriginal) {
@@ -759,7 +764,7 @@ export function prefixAllObjectIds<T extends TimelineObjGeneric> (objList: T[], 
 const AUTOTAKE_UPDATE_DEBOUNCE = 5000
 const AUTOTAKE_TAKE_DEBOUNCE = 1000
 
-export function isTooCloseToAutonext (currentPartInstance: PartInstance | undefined, isTake?: boolean) {
+export function isTooCloseToAutonext(currentPartInstance: PartInstance | undefined, isTake?: boolean) {
 	if (!currentPartInstance || !currentPartInstance.part.autoNext) return false
 
 	const debounce = isTake ? AUTOTAKE_TAKE_DEBOUNCE : AUTOTAKE_UPDATE_DEBOUNCE
