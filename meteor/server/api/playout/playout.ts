@@ -1252,6 +1252,13 @@ export namespace ServerPlayoutAPI {
 
 		return ServerPlayoutAdLibAPI.sourceLayerStickyPieceStart(rundownPlaylistId, sourceLayerId)
 	}
+	export function executeAction (rundownPlaylistId: RundownPlaylistId, actionId: string, userData: any) {
+		check(rundownPlaylistId, String)
+		check(actionId, String)
+		check(userData, Match.Any)
+
+		return ServerPlayoutAdLibAPI.executeAction(rundownPlaylistId, actionId, userData)
+	}
 	export function sourceLayerOnPartStop (rundownPlaylistId: RundownPlaylistId, partInstanceId: PartInstanceId, sourceLayerIds: string[]) {
 		check(rundownPlaylistId, String)
 		check(partInstanceId, String)

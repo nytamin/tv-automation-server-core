@@ -23,6 +23,9 @@ import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority } from '../ing
 import { PieceInstances, PieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
 import { PartInstances, PartInstance, PartInstanceId } from '../../../lib/collections/PartInstances'
 import { initCacheForRundownPlaylist, CacheForRundownPlaylist } from '../../DatabaseCaches'
+import {  NotesContext } from '../blueprints/context/context';
+import { ActionExecutionContext } from '../blueprints/context/adlibActions';
+import { getBlueprintOfRundown } from '../blueprints/cache';
 
 export namespace ServerPlayoutAdLibAPI {
 	export function pieceTakeNow (rundownPlaylistId: RundownPlaylistId, partInstanceId: PartInstanceId, pieceInstanceIdOrPieceIdToCopy: PieceInstanceId | PieceId) {
@@ -325,5 +328,47 @@ export namespace ServerPlayoutAdLibAPI {
 
 			waitForPromise(cache.saveAllToDatabase())
 		})
+	}
+
+	export function executeAction(rundownPlaylistId: RundownPlaylistId, actionId: string, userData: any): void {
+		const playlist = RundownPlaylists.findOne(rundownPlaylistId)
+		if (!playlist) throw new Meteor.Error(404, `Rundown "${rundownPlaylistId}" not found!`)
+		if (!playlist.active) throw new Meteor.Error(403, `Pieces can be only manipulated in an active rundown!`)
+		if (!playlist.currentPartInstanceId) throw new Meteor.Error(400, `A part needs to be active to place a sticky item`)
+
+		const cache = waitForPromise(initCacheForRundownPlaylist(playlist))
+
+		const currentPartInstance = cache.PartInstances.findOne(playlist.currentPartInstanceId)
+		if (!currentPartInstance) throw new Meteor.Error(501, `Current PartInstance "${playlist.currentPartInstanceId}" could not be found.`)
+
+		const rundown = cache.Rundowns.findOne(currentPartInstance.rundownId)
+		if (!rundown) throw new Meteor.Error(501, `Current Rundown "${currentPartInstance.rundownId}" could not be found`)
+
+		const blueprint = getBlueprintOfRundown(rundown) // todo: database again
+		if (!blueprint.blueprint.executeAction) {
+			throw new Meteor.Error(400, 'ShowStyle blueprint does not support executing actions')
+		}
+
+		console.log(ActionExecutionContext)
+
+		const notesContext = new NotesContext(`${rundown.name}(${playlist.name})`, `playlist=${playlist._id},rundown=${rundown._id},currentPartInstance=${currentPartInstance._id}`, true)
+		const context = new ActionExecutionContext(cache, notesContext, playlist, rundown)
+
+		const res = blueprint.blueprint.executeAction(context, actionId, userData)
+
+		// TODO - can we safely block things if we are too close to an autonext?
+
+		if (res) {
+			// TODO - timeout
+			waitForPromise(res)
+		}
+
+		waitForPromise(cache.saveAllToDatabase())
+
+		// TODO - other side effects and bits to save/do
+
+		if (context.currentPartChanged || (currentPartInstance.part.autoNext && context.nextPartChanged)) {
+			updateTimeline(cache, playlist.studioId)
+		}
 	}
 }
