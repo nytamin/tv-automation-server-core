@@ -54,22 +54,24 @@ export const SourceLayerItemContainer = class SourceLayerItemContainer extends M
 	private overrides: Partial<IPropsHeader>
 	private destroyed: boolean
 
-	updateMediaObjectSubscription () {
+	updateMediaObjectSubscription() {
 		if (this.destroyed) return
 
 		if (this.props.piece && this.props.piece.sourceLayer) {
 			const piece = this.props.piece
 			let objId: string | undefined = undefined
 
-			if (piece.instance.piece.content) {
-				switch (this.props.piece.sourceLayer.type) {
-					case SourceLayerType.VT:
-						objId = (piece.instance.piece.content as VTContent).fileName.toUpperCase()
-						break
-					case SourceLayerType.LIVE_SPEAK:
-						objId = (piece.instance.piece.content as LiveSpeakContent).fileName.toUpperCase()
-						break
-				}
+			switch (this.props.piece.sourceLayer.type) {
+				case SourceLayerType.VT:
+					objId = piece.instance.piece.content ?
+						(piece.instance.piece.content as VTContent).fileName.toUpperCase() :
+						undefined
+					break
+				case SourceLayerType.LIVE_SPEAK:
+					objId = piece.instance.piece.content ?
+						(piece.instance.piece.content as LiveSpeakContent).fileName.toUpperCase() :
+						undefined
+					break
 			}
 
 			if (objId && objId !== this.objId) {
@@ -84,13 +86,13 @@ export const SourceLayerItemContainer = class SourceLayerItemContainer extends M
 		}
 	}
 
-	shouldDataTrackerUpdate (prevProps: IPropsHeader): boolean {
+	shouldDataTrackerUpdate(prevProps: IPropsHeader): boolean {
 		if (this.props.piece !== prevProps.piece) return true
 		if (this.props.isLiveLine !== prevProps.isLiveLine) return true
 		return false
 	}
 
-	updateDataTracker () {
+	updateDataTracker() {
 		if (this.destroyed) return
 
 		this.statusComp = this.autorun(() => {
@@ -135,14 +137,14 @@ export const SourceLayerItemContainer = class SourceLayerItemContainer extends M
 		})
 	}
 
-	componentDidMount () {
+	componentDidMount() {
 		Meteor.defer(() => {
 			this.updateMediaObjectSubscription()
 			this.updateDataTracker()
 		})
 	}
 
-	componentDidUpdate (prevProps: IPropsHeader) {
+	componentDidUpdate(prevProps: IPropsHeader) {
 		Meteor.defer(() => {
 			this.updateMediaObjectSubscription()
 		})
@@ -152,12 +154,12 @@ export const SourceLayerItemContainer = class SourceLayerItemContainer extends M
 		}
 	}
 
-	componentWillUnmount () {
+	componentWillUnmount() {
 		this.destroyed = true
 		super.componentWillUnmount()
 	}
 
-	render () {
+	render() {
 		return (
 			<SourceLayerItem {...this.props} {...this.overrides} />
 		)

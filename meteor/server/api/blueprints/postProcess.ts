@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 import { Piece, InternalIBlueprintPieceGeneric } from '../../../lib/collections/Pieces'
 import { AdLibPiece } from '../../../lib/collections/AdLibPieces'
 import { RundownPlaylist } from '../../../lib/collections/RundownPlaylists'
-import { extendMandadory, getHash, protectString, unprotectString, Omit, literal } from '../../../lib/lib'
+import { extendMandadory, getHash, protectString, unprotectString, Omit, literal, ProtectedStringProperties } from '../../../lib/lib'
 import {
 	TimelineObjGeneric,
 	TimelineObjRundown,
@@ -19,10 +19,14 @@ import {
 	IBlueprintActionManifest,
 } from 'tv-automation-sofie-blueprints-integration'
 import { RundownAPI } from '../../../lib/api/rundown'
+import { BucketAdLib } from '../../../lib/collections/BucketAdlibs'
+import { ShowStyleContext } from './context'
+import { RundownImportVersions } from '../../../lib/collections/Rundowns'
 import { BlueprintId } from '../../../lib/collections/Blueprints'
 import { PartId } from '../../../lib/collections/Parts'
-import { AdLibAction } from '../../../lib/collections/AdLibActions';
-import { RundownBaselineAdLibAction } from '../../../lib/collections/RundownBaselineAdLibActions';
+import { AdLibAction } from '../../../lib/collections/AdLibActions'
+import { RundownBaselineAdLibAction } from '../../../lib/collections/RundownBaselineAdLibActions'
+import { BucketId } from '../../../lib/collections/Buckets'
 
 export function postProcessPieces(innerContext: RundownContext, pieces: IBlueprintPiece[], blueprintId: BlueprintId, partId: PartId): Piece[] {
 	let i = 0
@@ -153,4 +157,39 @@ export function postProcessRundownBaselineItems(innerContext: RundownContext, ba
 
 		return obj
 	})
+}
+
+export function postProcessBucketAdLib(innerContext: ShowStyleContext, itemOrig: IBlueprintAdLibPiece, blueprintId: BlueprintId, bucketId: BucketId, rank: number | undefined, importVersions: RundownImportVersions): BucketAdLib {
+	let i = 0
+	let partsUniqueIds: { [id: string]: true } = {}
+	let timelineUniqueIds: { [id: string]: true } = {}
+	let piece: BucketAdLib = {
+		...itemOrig,
+		_id: protectString(innerContext.getHashId(`${innerContext.showStyleVariantId}_${innerContext.studioId}_bucket_adlib_${itemOrig.externalId}`)),
+		studioId: innerContext.studioId,
+		showStyleVariantId: innerContext.showStyleVariantId,
+		bucketId,
+		importVersions,
+		_rank: rank || itemOrig._rank
+	}
+
+	if (!piece.externalId) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" externalId not set for piece in ' + partId + '! ("${innerContext.unhashId(unprotectString(piece._id))}")`)
+
+	if (partsUniqueIds[unprotectString(piece._id)]) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" ids of pieces must be unique! ("${innerContext.unhashId(unprotectString(piece._id))}")`)
+	partsUniqueIds[unprotectString(piece._id)] = true
+
+	if (piece.content && piece.content.timelineObjects) {
+		piece.content.timelineObjects = _.map(_.compact(piece.content.timelineObjects), (o: TimelineObjectCoreExt) => {
+			const obj = convertTimelineObject(o)
+
+			if (!obj.id) obj.id = innerContext.getHashId(piece._id + '_obj_' + (i++))
+
+			if (timelineUniqueIds[obj.id]) throw new Meteor.Error(400, `Error in blueprint "${blueprintId}" ids of timelineObjs must be unique! ("${innerContext.unhashId(obj.id)}")`)
+			timelineUniqueIds[obj.id] = true
+
+			return obj
+		})
+	}
+
+	return piece
 }

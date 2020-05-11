@@ -32,7 +32,7 @@ const DEFINITELY_ENDED_FUTURE_DURATION = 10 * 1000
 
 // export const updateSourceLayerInfinitesAfterPart: (rundown: Rundown, previousPart?: Part, runUntilEnd?: boolean) => void
 // = syncFunctionIgnore(updateSourceLayerInfinitesAfterPartInner)
-export function updateSourceLayerInfinitesAfterPart (cache: CacheForRundownPlaylist, rundown: Rundown, previousPart?: Part, runUntilEnd?: boolean): void {
+export function updateSourceLayerInfinitesAfterPart(cache: CacheForRundownPlaylist, rundown: Rundown, previousPart?: Part, runUntilEnd?: boolean): void {
 	let activeInfinitePieces: { [layer: string]: Piece } = {}
 	let activeInfiniteItemsSegmentId: { [layer: string]: SegmentId } = {}
 
@@ -264,11 +264,15 @@ export function updateSourceLayerInfinitesAfterPart (cache: CacheForRundownPlayl
 					cache.PieceInstances.update({
 						'piece._id': piece._id,
 						reset: { $ne: true }
-					}, { $set: {
-						'piece.infiniteId': piece.infiniteId }
+					}, {
+						$set: {
+							'piece.infiniteId': piece.infiniteId
+						}
 					})
-					cache.Pieces.update(piece._id, { $set: {
-						infiniteId: piece.infiniteId }
+					cache.Pieces.update(piece._id, {
+						$set: {
+							infiniteId: piece.infiniteId
+						}
 					})
 					// logger.debug(`updateSourceLayerInfinitesAfterPart: marked "${piece._id}" as start of infinite`)
 				}
@@ -280,7 +284,7 @@ export function updateSourceLayerInfinitesAfterPart (cache: CacheForRundownPlayl
 	}
 }
 
-export const cropInfinitesOnLayer = syncFunction(function cropInfinitesOnLayer (cache: CacheForRundownPlaylist, rundown: Rundown, partInstance: PartInstance, newPieceInstance: PieceInstance) {
+export const cropInfinitesOnLayer = syncFunction(function cropInfinitesOnLayer(cache: CacheForRundownPlaylist, rundown: Rundown, partInstance: PartInstance, newPieceInstance: PieceInstance) {
 	const showStyleBase = rundown.getShowStyleBase()
 	const exclusiveGroup = _.find(showStyleBase.sourceLayers, sl => sl._id === newPieceInstance.piece.sourceLayerId)
 	const newItemExclusivityGroup = exclusiveGroup ? exclusiveGroup.exclusiveGroup : undefined
@@ -293,25 +297,29 @@ export const cropInfinitesOnLayer = syncFunction(function cropInfinitesOnLayer (
 
 	for (const instance of pieceInstances) {
 		if (!instance.piece.userDuration || (!instance.piece.userDuration.duration && !instance.piece.userDuration.end)) {
-			cache.PieceInstances.update(instance._id, { $set: {
-				'piece.userDuration': { end: `#${getPieceGroupId(unprotectObject(newPieceInstance.piece))}.start + ${newPieceInstance.piece.adlibPreroll || 0}` },
-				definitelyEnded: getCurrentTime() + DEFINITELY_ENDED_FUTURE_DURATION + (newPieceInstance.piece.adlibPreroll || 0),
-				'piece.infiniteMode': PieceLifespan.Normal,
-				'piece.originalInfiniteMode': instance.piece.originalInfiniteMode !== undefined ? instance.piece.originalInfiniteMode : instance.piece.infiniteMode
-			}})
+			cache.PieceInstances.update(instance._id, {
+				$set: {
+					'piece.userDuration': { end: `#${getPieceGroupId(unprotectObject(newPieceInstance.piece))}.start + ${newPieceInstance.piece.adlibPreroll || 0}` },
+					definitelyEnded: getCurrentTime() + DEFINITELY_ENDED_FUTURE_DURATION + (newPieceInstance.piece.adlibPreroll || 0),
+					'piece.infiniteMode': PieceLifespan.Normal,
+					'piece.originalInfiniteMode': instance.piece.originalInfiniteMode !== undefined ? instance.piece.originalInfiniteMode : instance.piece.infiniteMode
+				}
+			})
 
 			// TODO-PartInstance - pending new data flow
-			cache.Pieces.update(instance.piece._id, { $set: {
-				userDuration: { end: `#${getPieceGroupId(unprotectObject(newPieceInstance.piece))}.start + ${newPieceInstance.piece.adlibPreroll || 0}` },
-				definitelyEnded: getCurrentTime() + DEFINITELY_ENDED_FUTURE_DURATION + (newPieceInstance.piece.adlibPreroll || 0),
-				infiniteMode: PieceLifespan.Normal,
-				originalInfiniteMode: instance.piece.originalInfiniteMode !== undefined ? instance.piece.originalInfiniteMode : instance.piece.infiniteMode
-			}})
+			cache.Pieces.update(instance.piece._id, {
+				$set: {
+					userDuration: { end: `#${getPieceGroupId(unprotectObject(newPieceInstance.piece))}.start + ${newPieceInstance.piece.adlibPreroll || 0}` },
+					definitelyEnded: getCurrentTime() + DEFINITELY_ENDED_FUTURE_DURATION + (newPieceInstance.piece.adlibPreroll || 0),
+					infiniteMode: PieceLifespan.Normal,
+					originalInfiniteMode: instance.piece.originalInfiniteMode !== undefined ? instance.piece.originalInfiniteMode : instance.piece.infiniteMode
+				}
+			})
 		}
 	}
 })
 
-export const stopInfinitesRunningOnLayer = syncFunction(function stopInfinitesRunningOnLayer (cache: CacheForRundownPlaylist, rundownPlaylist: RundownPlaylist, rundown: Rundown, partInstance: PartInstance, sourceLayer: string) {
+export const stopInfinitesRunningOnLayer = syncFunction(function stopInfinitesRunningOnLayer(cache: CacheForRundownPlaylist, rundownPlaylist: RundownPlaylist, rundown: Rundown, partInstance: PartInstance, sourceLayer: string) {
 	// TODO-PartInstance - pending new data flow for this whole function
 
 

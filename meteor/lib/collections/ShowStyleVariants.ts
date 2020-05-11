@@ -20,14 +20,21 @@ export interface DBShowStyleVariant extends ProtectedStringProperties<IBlueprint
 
 export interface ShowStyleCompound extends ShowStyleBase {
 	showStyleVariantId: ShowStyleVariantId
+	_rundownVersionHashVariant: string
 }
-export function getShowStyleCompound (showStyleVariantId: ShowStyleVariantId): ShowStyleCompound | undefined {
-	let showStyleVariant = ShowStyleVariants.findOne(showStyleVariantId)
+export function getShowStyleCompound(showStyleVariantId: ShowStyleVariantId): ShowStyleCompound | undefined {
+	const showStyleVariant = ShowStyleVariants.findOne(showStyleVariantId)
 	if (!showStyleVariant) return undefined
-	let showStyleBase = ShowStyleBases.findOne(showStyleVariant.showStyleBaseId)
+	const showStyleBase = ShowStyleBases.findOne(showStyleVariant.showStyleBaseId)
 	if (!showStyleBase) return undefined
 
-	let configs: {[id: string]: IConfigItem} = {}
+	return createShowStyleCompound(showStyleBase, showStyleVariant)
+}
+
+export function createShowStyleCompound(showStyleBase: ShowStyleBase, showStyleVariant: ShowStyleVariant): ShowStyleCompound | undefined {
+	if (showStyleBase._id !== showStyleVariant.showStyleBaseId) return undefined
+
+	let configs: { [id: string]: IConfigItem } = {}
 	_.each(showStyleBase.config, (config: IConfigItem) => {
 		configs[config._id] = config
 	})
@@ -36,11 +43,14 @@ export function getShowStyleCompound (showStyleVariantId: ShowStyleVariantId): S
 		configs[config._id] = config
 	})
 
-	return _.extend(showStyleBase, {
+	return {
+		...showStyleBase,
 		showStyleVariantId: showStyleVariant._id,
 		name: `${showStyleBase.name}-${showStyleVariant.name}`,
-		config: _.values(configs)
-	})
+		config: _.values(configs),
+		_rundownVersionHash: showStyleBase._rundownVersionHash,
+		_rundownVersionHashVariant: showStyleVariant._rundownVersionHash,
+	}
 }
 
 export class ShowStyleVariant implements DBShowStyleVariant {
@@ -50,7 +60,7 @@ export class ShowStyleVariant implements DBShowStyleVariant {
 	public config: Array<IConfigItem>
 	public _rundownVersionHash: string
 
-	constructor (document: DBShowStyleVariant) {
+	constructor(document: DBShowStyleVariant) {
 		_.each(_.keys(document), (key) => {
 			this[key] = document[key]
 		})
