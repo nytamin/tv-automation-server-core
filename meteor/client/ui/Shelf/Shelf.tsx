@@ -33,6 +33,7 @@ import { ShelfDashboardLayout } from './ShelfDashboardLayout'
 import { Bucket } from '../../../lib/collections/Buckets'
 import { RundownViewBuckets } from './RundownViewBuckets'
 import { ContextMenuTrigger } from 'react-contextmenu'
+import { ShelfInspector } from './Inspector/ShelfInspector'
 
 export enum ShelfTabs {
 	ADLIB = 'adlib',
@@ -450,6 +451,9 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 							shouldQueue={this.state.shouldQueue}
 							showStyleBase={this.props.showStyleBase}
 						/>
+					</ErrorBoundary>
+					<ErrorBoundary>
+						<ShelfInspector selected={this.state.selectedPiece} />
 					</ErrorBoundary>
 				</div>
 			</div>

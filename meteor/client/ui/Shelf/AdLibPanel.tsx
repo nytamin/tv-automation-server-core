@@ -36,7 +36,6 @@ import { MeteorCall } from '../../../lib/api/methods'
 import { AdLibActions } from '../../../lib/collections/AdLibActions'
 import { RundownUtils } from '../../lib/rundown'
 import { PieceUi } from '../SegmentTimeline/SegmentTimelineContainer'
-import { ShelfInspector } from './Inspector/ShelfInspector'
 
 interface IListViewPropsHeader {
 	uiSegments: Array<AdlibSegmentUi>
@@ -292,7 +291,6 @@ const AdLibListView = translate()(class AdLibListView extends React.Component<
 					{this.renderRundownAdLibs()}
 					{this.renderSegments()}
 				</table>
-				<ShelfInspector selected={selected} />
 			</div>
 		)
 	}
