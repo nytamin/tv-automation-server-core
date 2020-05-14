@@ -672,7 +672,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 						}))
 					)
 
-				const golobalAdLibActions = memoizedIsolatedAutorun((rundownIds, partIds) =>
+				const globalAdLibActions = memoizedIsolatedAutorun((rundownIds, partIds) =>
 					AdLibActions.find({
 						rundownId: {
 							$in: rundownIds,
@@ -712,7 +712,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 					})
 					, 'adLibActions', rundownIds, partIds)
 
-				rundownBaselineAdLibs.concat(golobalAdLibActions)
+				rundownBaselineAdLibs.concat(globalAdLibActions)
 
 				return rundownBaselineAdLibs
 			}, 'rundownBaselineAdLibs', currentRundown._id, sourceLayerLookup, props.showStyleBase.sourceLayers, sourceHotKeyUse)
@@ -923,11 +923,11 @@ export const AdLibPanel = translateWithTracker<IAdLibPanelProps, IState, IAdLibP
 		if (this.props.playlist && this.props.playlist.currentPartInstanceId) {
 			const currentPartInstanceId = this.props.playlist.currentPartInstanceId
 			if (adlibPiece.isFunction) {
-				doUserAction(t, e, adlibPiece.isGlobal ? 'Start Global Adlib' : 'Start Adlib', (e) => MeteorCall.userAction.executeAction(e,
+				doUserAction(t, e, adlibPiece.isGlobal ? UserAction.START_GLOBAL_ADLIB : UserAction.START_ADLIB, (e) => MeteorCall.userAction.executeAction(e,
 					this.props.playlist._id, unprotectString(adlibPiece._id), adlibPiece.userData
 				))
 			} else if (!adlibPiece.isGlobal && !adlibPiece.isFunction) {
-				doUserAction(t, e, 'Start Adlib', (e) => MeteorCall.userAction.segmentAdLibPieceStart(e,
+				doUserAction(t, e, UserAction.START_ADLIB, (e) => MeteorCall.userAction.segmentAdLibPieceStart(e,
 					this.props.playlist._id, currentPartInstanceId, adlibPiece._id, queue || false
 				))
 			} else if (adlibPiece.isGlobal && !adlibPiece.isSticky) {
