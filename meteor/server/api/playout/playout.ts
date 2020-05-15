@@ -1266,79 +1266,85 @@ export namespace ServerPlayoutAPI {
 
 		if (_.isString(sourceLayerIds)) sourceLayerIds = [sourceLayerIds]
 
+		if (sourceLayerIds.length === 0) return
 
-		return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
-			let playlist = RundownPlaylists.findOne(rundownPlaylistId)
-			if (!playlist) throw new Meteor.Error(404, `Rundown "${rundownPlaylistId}" not found!`)
-			if (!playlist.active) throw new Meteor.Error(403, `Pieces can be only manipulated in an active rundown!`)
-			if (playlist.currentPartInstanceId !== partInstanceId) throw new Meteor.Error(403, `Pieces can be only manipulated in a current part!`)
-
-			const cache = waitForPromise(initCacheForRundownPlaylist(playlist))
-
-			playlist = cache.RundownPlaylists.findOne(playlist._id)
-			if (!playlist) throw new Meteor.Error(404, `Rundown Playlist "${rundownPlaylistId}" not found in cache!`)
-
-			const partInstance = cache.PartInstances.findOne(partInstanceId)
-			if (!partInstance) throw new Meteor.Error(404, `PartInstance "${partInstanceId}" not found!`)
-			const lastStartedPlayback = partInstance.part.getLastStartedPlayback()
-			if (!lastStartedPlayback) throw new Meteor.Error(405, `Part "${partInstanceId}" has yet to start playback!`)
-
-			const rundown = cache.Rundowns.findOne(partInstance.rundownId)
-			if (!rundown) throw new Meteor.Error(501, `Rundown "${partInstance.rundownId}" not found!`)
-
-			const now = getCurrentTime()
-			const relativeNow = now - lastStartedPlayback
-			const orderedPieces = getResolvedPieces(cache, partInstance)
-
-			orderedPieces.forEach((pieceInstance) => {
-				if (sourceLayerIds.indexOf(pieceInstance.piece.sourceLayerId) !== -1) {
-					if (!pieceInstance.piece.userDuration) {
-						let newExpectedDuration: number | undefined = undefined
-
-						if (pieceInstance.piece.infiniteId && pieceInstance.piece.infiniteId !== pieceInstance.piece._id) {
-							newExpectedDuration = now - lastStartedPlayback
-						} else if (
-							pieceInstance.piece.startedPlayback && // currently playing
-							(pieceInstance.resolvedStart || 0) < relativeNow && // is relative, and has started
-							!pieceInstance.piece.stoppedPlayback // and not yet stopped
-						) {
-							newExpectedDuration = now - pieceInstance.piece.startedPlayback
-						}
-
-						if (newExpectedDuration !== undefined) {
-							console.log(`Cropping PieceInstance "${pieceInstance._id}" to ${newExpectedDuration}`)
-
-							PieceInstances.update({
-								_id: pieceInstance._id
-							}, {
-								$set: {
-									'piece.userDuration': {
-										duration: newExpectedDuration
-									}
-								}
-							})
-
-							// TODO-PartInstance - pending new data flow
-							Pieces.update({
-								_id: pieceInstance.piece._id
-							}, {
-								$set: {
-									userDuration: {
-										duration: newExpectedDuration
-									}
-								}
-							})
-						}
-					}
-				}
-			})
-
-			updateSourceLayerInfinitesAfterPart(cache, rundown, partInstance.part)
-
-			updateTimeline(cache, playlist.studioId)
-
-			waitForPromise(cache.saveAllToDatabase())
+		return ServerPlayoutAdLibAPI.executeCustomAction(rundownPlaylistId, (context) => {
+			// TODO - is this flow ok? errors might need some work to be more specific
+			context.stopPieceOnLayers(sourceLayerIds)
 		})
+
+		// return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
+		// 	let playlist = RundownPlaylists.findOne(rundownPlaylistId)
+		// 	if (!playlist) throw new Meteor.Error(404, `Rundown "${rundownPlaylistId}" not found!`)
+		// 	if (!playlist.active) throw new Meteor.Error(403, `Pieces can be only manipulated in an active rundown!`)
+		// 	if (playlist.currentPartInstanceId !== partInstanceId) throw new Meteor.Error(403, `Pieces can be only manipulated in a current part!`)
+
+		// 	const cache = waitForPromise(initCacheForRundownPlaylist(playlist))
+
+		// 	playlist = cache.RundownPlaylists.findOne(playlist._id)
+		// 	if (!playlist) throw new Meteor.Error(404, `Rundown Playlist "${rundownPlaylistId}" not found in cache!`)
+
+		// 	const partInstance = cache.PartInstances.findOne(partInstanceId)
+		// 	if (!partInstance) throw new Meteor.Error(404, `PartInstance "${partInstanceId}" not found!`)
+		// 	const lastStartedPlayback = partInstance.part.getLastStartedPlayback()
+		// 	if (!lastStartedPlayback) throw new Meteor.Error(405, `Part "${partInstanceId}" has yet to start playback!`)
+
+		// 	const rundown = cache.Rundowns.findOne(partInstance.rundownId)
+		// 	if (!rundown) throw new Meteor.Error(501, `Rundown "${partInstance.rundownId}" not found!`)
+
+		// 	const now = getCurrentTime()
+		// 	const relativeNow = now - lastStartedPlayback
+		// 	const orderedPieces = getResolvedPieces(cache, partInstance)
+
+		// 	orderedPieces.forEach((pieceInstance) => {
+		// 		if (sourceLayerIds.indexOf(pieceInstance.piece.sourceLayerId) !== -1) {
+		// 			if (!pieceInstance.piece.userDuration) {
+		// 				let newExpectedDuration: number | undefined = undefined
+
+		// 				if (pieceInstance.piece.infiniteId && pieceInstance.piece.infiniteId !== pieceInstance.piece._id) {
+		// 					newExpectedDuration = now - lastStartedPlayback
+		// 				} else if (
+		// 					pieceInstance.piece.startedPlayback && // currently playing
+		// 					(pieceInstance.resolvedStart || 0) < relativeNow && // is relative, and has started
+		// 					!pieceInstance.piece.stoppedPlayback // and not yet stopped
+		// 				) {
+		// 					newExpectedDuration = now - pieceInstance.piece.startedPlayback
+		// 				}
+
+		// 				if (newExpectedDuration !== undefined) {
+		// 					console.log(`Cropping PieceInstance "${pieceInstance._id}" to ${newExpectedDuration}`)
+
+		// 					PieceInstances.update({
+		// 						_id: pieceInstance._id
+		// 					}, {
+		// 						$set: {
+		// 							'piece.userDuration': {
+		// 								duration: newExpectedDuration
+		// 							}
+		// 						}
+		// 					})
+
+		// 					// TODO-PartInstance - pending new data flow
+		// 					Pieces.update({
+		// 						_id: pieceInstance.piece._id
+		// 					}, {
+		// 						$set: {
+		// 							userDuration: {
+		// 								duration: newExpectedDuration
+		// 							}
+		// 						}
+		// 					})
+		// 				}
+		// 			}
+		// 		}
+		// 	})
+
+		// 	updateSourceLayerInfinitesAfterPart(cache, rundown, partInstance.part)
+
+		// 	updateTimeline(cache, playlist.studioId)
+
+		// 	waitForPromise(cache.saveAllToDatabase())
+		// })
 	}
 	export function rundownTogglePartArgument (
 		rundownPlaylistId: RundownPlaylistId,
