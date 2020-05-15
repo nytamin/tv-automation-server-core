@@ -184,7 +184,7 @@ export namespace ServerPlayoutAdLibAPI {
 		rundown: Rundown,
 		queue: boolean,
 		partInstanceId0: PartInstanceId,
-		adLibPiece: AdLibPiece
+		adLibPiece: AdLibPiece | BucketAdLib
 	) {
 		if (adLibPiece.toBeQueued) {
 			// Allow adlib to request to always be queued
@@ -229,7 +229,7 @@ export namespace ServerPlayoutAdLibAPI {
 		rundownPlaylist: RundownPlaylist,
 		rundown: Rundown,
 		afterPartInstance: PartInstance,
-		adLibPiece: AdLibPiece
+		adLibPiece: AdLibPiece | BucketAdLib
 	): PartInstanceId {
 		logger.info('adlibQueueInsertPartInstance')
 
@@ -343,11 +343,13 @@ export namespace ServerPlayoutAdLibAPI {
 				throw new Meteor.Error(403, `Buckete AdLib-pieces can not be used in combination with hold!`)
 			}
 
+			const cache = waitForPromise(initCacheForRundownPlaylist(rundownPlaylist))
 			if (!queue && rundownPlaylist.currentPartInstanceId !== partInstanceId) throw new Meteor.Error(403, `Part AdLib-pieces can be only placed in a currently playing part!`)
 
-			const partInstance = PartInstances.findOne(partInstanceId)
+
+			const partInstance = cache.PartInstances.findOne(partInstanceId)
 			if (!partInstance) throw new Meteor.Error(404, `PartInstance "${partInstanceId}" not found!`)
-			const rundown = Rundowns.findOne(partInstance.rundownId)
+			const rundown = cache.Rundowns.findOne(partInstance.rundownId)
 			if (!rundown) throw new Meteor.Error(404, `Rundown "${partInstance.rundownId}" not found!`)
 			if (rundown.playlistId !== rundownPlaylistId) throw new Meteor.Error(406, `Rundown "${rundown._id}" not a part of RundownPlaylist "${rundownPlaylistId}!"`)
 
@@ -355,7 +357,9 @@ export namespace ServerPlayoutAdLibAPI {
 				throw new Meteor.Error(404, `Bucket AdLib "${bucketAdlibId}" is not compatible with rundown "${rundown._id}"!`)
 			}
 
-			innerStartAdLibPiece(rundownPlaylist, rundown, queue, partInstanceId, bucketAdlib)
+			innerStartAdLibPiece(cache, rundownPlaylist, rundown, queue, partInstanceId, bucketAdlib)
+
+			waitForPromise(cache.saveAllToDatabase())
 		})
 	}
 }
