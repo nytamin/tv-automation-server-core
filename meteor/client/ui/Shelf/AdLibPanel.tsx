@@ -33,7 +33,7 @@ import { Piece, PieceGeneric } from '../../../lib/collections/Pieces'
 import { memoizedIsolatedAutorun } from '../../lib/reactiveData/reactiveDataHelper'
 import { PartInstance, PartInstances } from '../../../lib/collections/PartInstances'
 import { MeteorCall } from '../../../lib/api/methods'
-import { AdLibActions } from '../../../lib/collections/AdLibActions'
+import { AdLibActions, AdLibActionCommon } from '../../../lib/collections/AdLibActions'
 import { RundownUtils } from '../../lib/rundown'
 import { PieceUi } from '../SegmentTimeline/SegmentTimelineContainer'
 
@@ -370,9 +370,10 @@ export interface AdLibPieceUi extends AdLibPiece {
 	isGlobal?: boolean
 	isHidden?: boolean
 	isSticky?: boolean
-	isFunction?: boolean
+	isAction?: boolean
 	isClearSourceLayer?: boolean
 	userData?: any
+	adlibAction?: AdLibActionCommon
 }
 
 export interface AdlibSegmentUi extends DBSegment {
@@ -557,7 +558,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 				_id: protectString(`function_${action._id}`),
 				name: action.display.label,
 				status: RundownAPI.PieceStatusCode.UNKNOWN,
-				isFunction: true,
+				isAction: true,
 				expectedDuration: 0,
 				disabled: false,
 				externalId: unprotectString(action._id),
@@ -566,7 +567,8 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 				outputLayerId,
 				_rank: action.display._rank || 0,
 				content: content,
-				userData: action.userData
+				userData: action.userData,
+				adlibAction: action
 			})]
 		})
 		, 'adLibActions', rundownIds, partIds)
@@ -672,7 +674,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 						}))
 					)
 
-				const globalAdLibActions = memoizedIsolatedAutorun((rundownIds, partIds) =>
+				const globalAdLibActions = memoizedIsolatedAutorun((rundownIds) =>
 					AdLibActions.find({
 						rundownId: {
 							$in: rundownIds,
@@ -697,7 +699,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 							_id: protectString(`function_${action._id}`),
 							name: action.display.label,
 							status: RundownAPI.PieceStatusCode.UNKNOWN,
-							isFunction: true,
+							isAction: true,
 							isGlobal: true,
 							expectedDuration: 0,
 							disabled: false,
@@ -707,10 +709,11 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 							outputLayerId,
 							_rank: action.display._rank || 0,
 							content: content,
-							userData: action.userData
+							userData: action.userData,
+							adlibAction: action
 						})
 					})
-					, 'adLibActions', rundownIds, partIds)
+					, 'globalAdLibActions', rundownIds)
 
 				rundownBaselineAdLibs.concat(globalAdLibActions)
 
@@ -922,11 +925,11 @@ export const AdLibPanel = translateWithTracker<IAdLibPanelProps, IState, IAdLibP
 		}
 		if (this.props.playlist && this.props.playlist.currentPartInstanceId) {
 			const currentPartInstanceId = this.props.playlist.currentPartInstanceId
-			if (adlibPiece.isFunction) {
+			if (adlibPiece.isAction) {
 				doUserAction(t, e, adlibPiece.isGlobal ? UserAction.START_GLOBAL_ADLIB : UserAction.START_ADLIB, (e) => MeteorCall.userAction.executeAction(e,
 					this.props.playlist._id, unprotectString(adlibPiece._id), adlibPiece.userData
 				))
-			} else if (!adlibPiece.isGlobal && !adlibPiece.isFunction) {
+			} else if (!adlibPiece.isGlobal && !adlibPiece.isAction) {
 				doUserAction(t, e, UserAction.START_ADLIB, (e) => MeteorCall.userAction.segmentAdLibPieceStart(e,
 					this.props.playlist._id, currentPartInstanceId, adlibPiece._id, queue || false
 				))
