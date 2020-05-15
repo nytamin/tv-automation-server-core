@@ -140,7 +140,7 @@ export namespace ServerPlayoutAdLibAPI {
 
 			if (!queue && rundownPlaylist.currentPartInstanceId !== partInstanceId) throw new Meteor.Error(403, `Part AdLib-pieces can be only placed in a currently playing part!`)
 
-			innerStartAdLibPiece(cache, rundownPlaylist, rundown, queue, partInstanceId, adLibPiece)
+			innerStartAdLibPiece2(cache, rundownPlaylist, rundown, queue, partInstance, adLibPiece)
 
 			waitForPromise(cache.saveAllToDatabase())
 		})
@@ -171,113 +171,216 @@ export namespace ServerPlayoutAdLibAPI {
 			if (!adLibPiece) throw new Meteor.Error(404, `Rundown Baseline Ad Lib Item "${baselineAdLibPieceId}" not found!`)
 			if (!queue && rundownPlaylist.currentPartInstanceId !== partInstanceId) throw new Meteor.Error(403, `Rundown Baseline AdLib-pieces can be only placed in a currently playing part!`)
 
-			innerStartAdLibPiece(cache, rundownPlaylist, rundown, queue, partInstanceId, adLibPiece)
+			innerStartAdLibPiece2(cache, rundownPlaylist, rundown, queue, partInstance, adLibPiece)
 
 			waitForPromise(cache.saveAllToDatabase())
 		})
 	}
-	function innerStartAdLibPiece (
-		cache: CacheForRundownPlaylist,
+	function innerStartAdLibPiece2(cache: CacheForRundownPlaylist,
 		rundownPlaylist: RundownPlaylist,
 		rundown: Rundown,
 		queue: boolean,
-		partInstanceId0: PartInstanceId,
+		currentPartInstance: PartInstance,
 		adLibPiece: AdLibPiece
 	) {
-		if (adLibPiece.toBeQueued) {
-			// Allow adlib to request to always be queued
-			queue = true
-		}
+		if (queue || adLibPiece.toBeQueued) {
+			const newPartInstance = new PartInstance({
+				_id: getRandomId(),
+				rundownId: rundown._id,
+				segmentId: currentPartInstance.segmentId,
+				takeCount: currentPartInstance.takeCount + 1,
+				part: new Part({
+					_id: getRandomId(),
+					_rank: 99999, // something high, so it will be placed after current part. The rank will be updated later to its correct value
+					externalId: '',
+					segmentId: currentPartInstance.segmentId,
+					rundownId: rundown._id,
+					title: adLibPiece.name,
+					dynamicallyInserted: true,
+					afterPart: currentPartInstance.part.afterPart || currentPartInstance.part._id,
+					typeVariant: 'adlib',
+					prerollDuration: adLibPiece.adlibPreroll,
+					expectedDuration: adLibPiece.expectedDuration
+				})
+			})
+			const newPieceInstance = convertAdLibToPieceInstance(adLibPiece, newPartInstance, queue)
+			innerStartAdLibPiece2Queued(cache, rundownPlaylist, rundown, currentPartInstance, newPartInstance, [newPieceInstance])
 
-		let partInstanceId = partInstanceId0
-		let previousPartInstance: PartInstance | undefined
-
-		if (queue) {
-			previousPartInstance = cache.PartInstances.findOne(partInstanceId0)
-			if (!previousPartInstance) throw new Meteor.Error(404, `PartInstance "${partInstanceId0}" not found!`)
-
-			// insert a NEW, adlibbed part after this part
-			partInstanceId = adlibQueueInsertPartInstance(cache, rundownPlaylist, rundown, previousPartInstance, adLibPiece)
-		}
-		let partInstance = cache.PartInstances.findOne({
-			_id: partInstanceId,
-			rundownId: rundown._id
-		})
-		if (!partInstance) throw new Meteor.Error(404, `PartInstance "${partInstanceId}" not found!`)
-
-		const newPieceInstance = convertAdLibToPieceInstance(adLibPiece, partInstance, queue)
-
-		cache.PieceInstances.insert(newPieceInstance)
-		// TODO-PartInstance - pending new data flow
-		cache.Pieces.insert(newPieceInstance.piece)
-
-		if (queue) {
-			// Update any infinites
-			updateSourceLayerInfinitesAfterPart(cache, rundown, previousPartInstance!.part)
-
-			setNextPart(cache, rundownPlaylist, partInstance)
 		} else {
-			cropInfinitesOnLayer(cache, rundown, partInstance, newPieceInstance)
-			stopInfinitesRunningOnLayer(cache, rundownPlaylist, rundown, partInstance, newPieceInstance.piece.sourceLayerId)
+			const newPieceInstance = convertAdLibToPieceInstance(adLibPiece, currentPartInstance, queue)
+			innerStartAdLibPiece2Piece(cache, rundownPlaylist, rundown, currentPartInstance, newPieceInstance)
+			
+			// TODO - I dont think this is necessary
+			// stopInfinitesRunningOnLayer(cache, rundownPlaylist, rundown, currentPartInstance, newPieceInstance.piece.sourceLayerId)
 		}
+		
+		// Update any infinites
+		// TODO - this was done for queue, with stopInfinitesRunningOnLayer done for non-queue. This was weird..
+		updateSourceLayerInfinitesAfterPart(cache, rundown, currentPartInstance.part)
+		
 		updateTimeline(cache, rundownPlaylist.studioId)
 	}
-	function adlibQueueInsertPartInstance (
-		cache: CacheForRundownPlaylist,
+
+	export function innerStartAdLibPiece2Queued(cache: CacheForRundownPlaylist,
 		rundownPlaylist: RundownPlaylist,
 		rundown: Rundown,
-		afterPartInstance: PartInstance,
-		adLibPiece: AdLibPiece
-	): PartInstanceId {
+		currentPartInstance: PartInstance,
+		newPartInstance: PartInstance,
+		newPieceInstances: PieceInstance[]
+	) {
 		logger.info('adlibQueueInsertPartInstance')
 
 		// check if there's already a queued part after this:
-		const afterPartId = afterPartInstance.part.afterPart || afterPartInstance.part._id
+		// TODO-PartInstance - pending new data flow - the call to setNextPart will prune the partInstance, so this will not be needed
+		const afterPartId = currentPartInstance.part.afterPart || currentPartInstance.part._id
 		const alreadyQueuedPartInstance = cache.PartInstances.findOne({
 			rundownId: rundown._id,
-			segmentId: afterPartInstance.segmentId,
+			segmentId: currentPartInstance.segmentId,
 			'part.afterPart': afterPartId,
-			'part._rank': { $gt: afterPartInstance.part._rank }
+			'part._rank': { $gt: currentPartInstance.part._rank }
 		}, {
 			sort: { _rank: -1, _id: -1 }
 		})
 		if (alreadyQueuedPartInstance) {
 			if (rundownPlaylist.currentPartInstanceId !== alreadyQueuedPartInstance._id) {
 				cache.Parts.remove(alreadyQueuedPartInstance.part._id)
-				cache.PartInstances.remove(alreadyQueuedPartInstance._id)
-				afterRemoveParts(cache, rundown._id, [alreadyQueuedPartInstance.part])
+				// cache.PartInstances.remove(alreadyQueuedPartInstance._id)
+				afterRemoveParts(cache, currentPartInstance.rundownId, [alreadyQueuedPartInstance.part])
 			}
 		}
 
-		const newPartInstanceId = protectString<PartInstanceId>(Random.id())
-		const newPart = literal<DBPart>({
-			_id: getRandomId(),
-			_rank: 99999, // something high, so it will be placed after current part. The rank will be updated later to its correct value
-			externalId: '',
-			segmentId: afterPartInstance.segmentId,
-			rundownId: rundown._id,
-			title: adLibPiece.name,
-			dynamicallyInserted: true,
-			afterPart: afterPartInstance.part.afterPart || afterPartInstance.part._id,
-			typeVariant: 'adlib',
-			prerollDuration: adLibPiece.adlibPreroll,
-			expectedDuration: adLibPiece.expectedDuration
-		})
-		cache.PartInstances.insert({
-			_id: newPartInstanceId,
-			rundownId: newPart.rundownId,
-			segmentId: newPart.segmentId,
-			takeCount: afterPartInstance.takeCount + 1,
-			part: new Part(newPart)
-		})
+		// Ensure it is labelled as dynamic
+		newPartInstance.part.afterPart = afterPartId
+		newPartInstance.part.dynamicallyInserted = true
 
+		cache.PartInstances.insert(newPartInstance)
 		// TODO-PartInstance - pending new data flow
-		cache.Parts.insert(newPart)
+		cache.Parts.insert(newPartInstance.part)
 
-		updatePartRanks(cache, rundown) // place in order
+		newPieceInstances.forEach(pieceInstance => {
+			// Ensure it is labelled as dynamic
+			pieceInstance.partInstanceId = newPartInstance._id
+			pieceInstance.piece.partId = newPartInstance.part._id
 
-		return newPartInstanceId
+			cache.PieceInstances.insert(pieceInstance)
+			// TODO-PartInstance - pending new data flow
+			cache.Pieces.insert(pieceInstance.piece)
+		})
+
+		updatePartRanks(cache, rundown)
+
+		setNextPart(cache, rundownPlaylist, newPartInstance)
 	}
+	export function innerStartAdLibPiece2Piece(cache: CacheForRundownPlaylist,
+		rundownPlaylist: RundownPlaylist,
+		rundown: Rundown,
+		existingPartInstance: PartInstance,
+		newPieceInstance: PieceInstance
+	) {
+		// Ensure it is labelled as dynamic
+		newPieceInstance.partInstanceId = existingPartInstance._id
+		newPieceInstance.piece.partId = existingPartInstance.part._id
+
+		cache.PieceInstances.insert(newPieceInstance)
+		// TODO-PartInstance - pending new data flow
+		cache.Pieces.insert(newPieceInstance.piece)
+
+		cropInfinitesOnLayer(cache, rundown, existingPartInstance, newPieceInstance)
+	}
+
+	// function innerStartAdLibPiece (
+	// 	cache: CacheForRundownPlaylist,
+	// 	rundownPlaylist: RundownPlaylist,
+	// 	rundown: Rundown,
+	// 	queue: boolean,
+	// 	partInstance: PartInstance,
+	// 	adLibPiece: AdLibPiece
+	// ) {
+	// 	if (adLibPiece.toBeQueued) {
+	// 		// Allow adlib to request to always be queued
+	// 		queue = true
+	// 	}
+
+	// 	const previousPartInstance = partInstance
+	// 	if (queue) {
+	// 		// insert a NEW, adlibbed part after this part
+	// 		partInstance = adlibQueueInsertPartInstance(cache, rundownPlaylist, rundown, previousPartInstance, adLibPiece)
+	// 	}
+
+	// 	const newPieceInstance = convertAdLibToPieceInstance(adLibPiece, partInstance, queue)
+
+	// 	cache.PieceInstances.insert(newPieceInstance)
+	// 	// TODO-PartInstance - pending new data flow
+	// 	cache.Pieces.insert(newPieceInstance.piece)
+
+	// 	if (queue) {
+	// 		// Update any infinites
+	// 		updateSourceLayerInfinitesAfterPart(cache, rundown, previousPartInstance.part)
+
+	// 		setNextPart(cache, rundownPlaylist, partInstance)
+	// 	} else {
+	// 		cropInfinitesOnLayer(cache, rundown, partInstance, newPieceInstance)
+	// 		stopInfinitesRunningOnLayer(cache, rundownPlaylist, rundown, partInstance, newPieceInstance.piece.sourceLayerId)
+	// 	}
+	// 	updateTimeline(cache, rundownPlaylist.studioId)
+	// }
+	// function adlibQueueInsertPartInstance (
+	// 	cache: CacheForRundownPlaylist,
+	// 	rundownPlaylist: RundownPlaylist,
+	// 	rundown: Rundown,
+	// 	afterPartInstance: PartInstance,
+	// 	adLibPiece: AdLibPiece
+	// ): PartInstance {
+	// 	logger.info('adlibQueueInsertPartInstance')
+
+	// 	// check if there's already a queued part after this:
+	// 	const afterPartId = afterPartInstance.part.afterPart || afterPartInstance.part._id
+	// 	const alreadyQueuedPartInstance = cache.PartInstances.findOne({
+	// 		rundownId: rundown._id,
+	// 		segmentId: afterPartInstance.segmentId,
+	// 		'part.afterPart': afterPartId,
+	// 		'part._rank': { $gt: afterPartInstance.part._rank }
+	// 	}, {
+	// 		sort: { _rank: -1, _id: -1 }
+	// 	})
+	// 	if (alreadyQueuedPartInstance) {
+	// 		if (rundownPlaylist.currentPartInstanceId !== alreadyQueuedPartInstance._id) {
+	// 			cache.Parts.remove(alreadyQueuedPartInstance.part._id)
+	// 			cache.PartInstances.remove(alreadyQueuedPartInstance._id)
+	// 			afterRemoveParts(cache, rundown._id, [alreadyQueuedPartInstance.part])
+	// 		}
+	// 	}
+
+	// 	const newPartInstanceId = protectString<PartInstanceId>(Random.id())
+	// 	const newPart = literal<DBPart>({
+	// 		_id: getRandomId(),
+	// 		_rank: 99999, // something high, so it will be placed after current part. The rank will be updated later to its correct value
+	// 		externalId: '',
+	// 		segmentId: afterPartInstance.segmentId,
+	// 		rundownId: rundown._id,
+	// 		title: adLibPiece.name,
+	// 		dynamicallyInserted: true,
+	// 		afterPart: afterPartInstance.part.afterPart || afterPartInstance.part._id,
+	// 		typeVariant: 'adlib',
+	// 		prerollDuration: adLibPiece.adlibPreroll,
+	// 		expectedDuration: adLibPiece.expectedDuration
+	// 	})
+	// 	const newPartInstance = new PartInstance({
+	// 		_id: newPartInstanceId,
+	// 		rundownId: newPart.rundownId,
+	// 		segmentId: newPart.segmentId,
+	// 		takeCount: afterPartInstance.takeCount + 1,
+	// 		part: new Part(newPart)
+	// 	})
+	// 	cache.PartInstances.insert(newPartInstance)
+
+	// 	// TODO-PartInstance - pending new data flow
+	// 	cache.Parts.insert(newPart)
+
+	// 	updatePartRanks(cache, rundown) // place in order
+
+	// 	return newPartInstance
+	// }
 	export function sourceLayerStickyPieceStart (rundownPlaylistId: RundownPlaylistId, sourceLayerId: string) {
 		return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
 			const playlist = RundownPlaylists.findOne(rundownPlaylistId)
@@ -323,7 +426,7 @@ export namespace ServerPlayoutAdLibAPI {
 
 			if (lastPieceInstances.length > 0) {
 				const lastPiece = convertPieceToAdLibPiece(lastPieceInstances[0].piece)
-				innerStartAdLibPiece(cache, playlist, rundown, false, playlist.currentPartInstanceId, lastPiece)
+				innerStartAdLibPiece2(cache, playlist, rundown, false, currentPartInstance, lastPiece)
 			}
 
 			waitForPromise(cache.saveAllToDatabase())
@@ -419,7 +522,7 @@ export namespace ServerPlayoutAdLibAPI {
 				updateSourceLayerInfinitesAfterPart(cache, rundown, currentPartInstance.part)
 			}
 
-			if (context.currentPartChanged || (currentPartInstance.part.autoNext && context.nextPartChanged)) {
+			if (context.currentPartChanged || context.nextPartChanged) {
 				updateTimeline(cache, playlist.studioId)
 			}
 

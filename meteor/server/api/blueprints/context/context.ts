@@ -44,7 +44,6 @@ import { PieceInstances, unprotectPieceInstance, PieceInstanceId, PieceInstance 
 import { InternalIBlueprintPartInstance, PartInstanceId, unprotectPartInstance, PartInstance } from '../../../../lib/collections/PartInstances'
 import { CacheForRundownPlaylist } from '../../../DatabaseCaches';
 import { getResolvedPieces } from '../../playout/pieces';
-import { postProcessPieces } from '../postProcess';
 import { Blueprints } from '../../../../lib/collections/Blueprints';
 
 /** Common */

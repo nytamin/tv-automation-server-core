@@ -1,7 +1,8 @@
 import * as _ from 'underscore'
 import { Meteor } from 'meteor/meteor'
-import { getHash, formatDateAsTimecode, formatDurationAsTimecode, unprotectString, unprotectObject, unprotectObjectArray, protectString, assertNever, protectStringArray, getCurrentTime, unprotectStringArray, normalizeArray } from '../../../../lib/lib'
-import { DBPart, PartId } from '../../../../lib/collections/Parts'
+import { Random } from 'meteor/random'
+import { getHash, formatDateAsTimecode, formatDurationAsTimecode, unprotectString, unprotectObject, unprotectObjectArray, protectString, assertNever, protectStringArray, getCurrentTime, unprotectStringArray, normalizeArray, literal, getRandomId } from '../../../../lib/lib'
+import { DBPart, PartId, Part } from '../../../../lib/collections/Parts'
 import { check, Match } from 'meteor/check'
 import { logger } from '../../../../lib/logging'
 import {
@@ -41,17 +42,22 @@ import { PartNote, NoteType, INoteBase } from '../../../../lib/api/notes'
 import { loadCachedRundownData, loadIngestDataCachePart } from '../../ingest/ingestCache'
 import { RundownPlaylist, RundownPlaylistId } from '../../../../lib/collections/RundownPlaylists'
 import { Segment, SegmentId } from '../../../../lib/collections/Segments'
-import { PieceInstances, unprotectPieceInstance, PieceInstanceId, PieceInstance } from '../../../../lib/collections/PieceInstances'
-import { InternalIBlueprintPartInstance, PartInstanceId, unprotectPartInstance, PartInstance } from '../../../../lib/collections/PartInstances'
+import { PieceInstances, unprotectPieceInstance, PieceInstanceId, PieceInstance, wrapPieceToInstance } from '../../../../lib/collections/PieceInstances'
+import { InternalIBlueprintPartInstance, PartInstanceId, unprotectPartInstance, PartInstance, wrapPartToTemporaryInstance } from '../../../../lib/collections/PartInstances'
 import { CacheForRundownPlaylist } from '../../../DatabaseCaches';
 import { getResolvedPieces } from '../../playout/pieces';
 import { postProcessPieces } from '../postProcess';
 import { StudioContext, NotesContext, ShowStyleContext } from './context';
+import { setNextPart } from '../../playout/lib';
+import { ServerPlayoutAdLibAPI } from '../../playout/adlib';
 
 /** Actions */
 export class ActionExecutionContext extends ShowStyleContext implements IActionExecutionContext {
 	private readonly cache: CacheForRundownPlaylist
 	private readonly rundownPlaylist: RundownPlaylist
+	private readonly rundown: Rundown
+
+	private queuedPartInstance: PartInstance | undefined
 
 	public currentPartChanged: boolean = false
 	public nextPartChanged: boolean = false
@@ -60,6 +66,7 @@ export class ActionExecutionContext extends ShowStyleContext implements IActionE
 		super(cache.Studios.findOne(rundownPlaylist.studioId)!, rundown.showStyleBaseId, rundown.showStyleVariantId, notesContext) // TODO - better loading of studio
 		this.cache = cache
 		this.rundownPlaylist = rundownPlaylist
+		this.rundown = rundown
 	}
 
 	private _getPartInstanceId(part: 'current' | 'next'): PartInstanceId | null {
@@ -75,27 +82,27 @@ export class ActionExecutionContext extends ShowStyleContext implements IActionE
 		}
 	}
 	
-	getNextShowStyleConfig (): {[key: string]: ConfigItemValue} {
-		const partInstanceId = this.rundownPlaylist.nextPartInstanceId
-		if (!partInstanceId) {
-			throw new Error('Cannot get ShowStyle config when there is no next part')
-		}
+	// getNextShowStyleConfig (): {[key: string]: ConfigItemValue} {
+	// 	const partInstanceId = this.rundownPlaylist.nextPartInstanceId
+	// 	if (!partInstanceId) {
+	// 		throw new Error('Cannot get ShowStyle config when there is no next part')
+	// 	}
 
-		const partInstance = this.cache.PartInstances.findOne(partInstanceId)
-		const rundown = partInstance ? this.cache.Rundowns.findOne(partInstance.rundownId) : undefined
-		if (!rundown) {
-			throw new Error(`Failed to fetch rundown for PartInstance "${partInstanceId}"`)
-		}
+	// 	const partInstance = this.cache.PartInstances.findOne(partInstanceId)
+	// 	const rundown = partInstance ? this.cache.Rundowns.findOne(partInstance.rundownId) : undefined
+	// 	if (!rundown) {
+	// 		throw new Error(`Failed to fetch rundown for PartInstance "${partInstanceId}"`)
+	// 	}
 
-		const showStyleCompound = getShowStyleCompound(rundown.showStyleVariantId)
-		if (!showStyleCompound) throw new Error(`Failed to compile showStyleCompound for "${rundown.showStyleVariantId}"`)
+	// 	const showStyleCompound = getShowStyleCompound(rundown.showStyleVariantId)
+	// 	if (!showStyleCompound) throw new Error(`Failed to compile showStyleCompound for "${rundown.showStyleVariantId}"`)
 
-		const res: {[key: string]: ConfigItemValue} = {}
-		_.each(showStyleCompound.config, (c) => {
-			res[c._id] = c.value
-		})
-		return res
-	}
+	// 	const res: {[key: string]: ConfigItemValue} = {}
+	// 	_.each(showStyleCompound.config, (c) => {
+	// 		res[c._id] = c.value
+	// 	})
+	// 	return res
+	// }
 
 	getPartInstance(part: "current" | "next"): IBlueprintPartInstance | undefined {
 		const partInstanceId = this._getPartInstanceId(part)
@@ -133,26 +140,89 @@ export class ActionExecutionContext extends ShowStyleContext implements IActionE
 		return resolvedInstances.map(piece => _.clone(unprotectObject(piece)))
 	}
 
-	findLastPieceOnLayers(...sourceLayerIds: string[]): IBlueprintPieceInstance[] {
+	findLastPieceOnLayer(sourceLayerId: string, originalOnly?: boolean): IBlueprintPieceInstance | undefined {
 		throw new Error("Method not implemented.");
 	}
-	insertPiece(part: "current" | "next", piece: IBlueprintPiece): string {
+	insertPiece(part: "current" | "next", rawPiece: IBlueprintPiece): string {
 		const partInstanceId = this._getPartInstanceId(part)
 		if (!partInstanceId) {
 			throw new Error('Cannot insert piece when no active part')
 		}
-
 		
+		const partInstance = this.cache.PartInstances.findOne(partInstanceId)
+		if (!partInstance) {
+			throw new Error('Cannot queue part when no partInstance')
+		}
 
-		throw new Error("Method not implemented.");
+		const rundown = this.cache.Rundowns.findOne(partInstance.rundownId)
+		if (!rundown) {
+			throw new Error('Failed to find rundown of partInstance')
+		}
+
+		// TODO - ensure id does not already exist
+		if (!rawPiece._id) rawPiece._id = Random.id()
+
+		const piece = postProcessPieces(this, [rawPiece], this.getShowStyleBase().blueprintId, partInstance.rundownId, partInstance.part._id, part === 'current')[0]
+		const newPieceInstance = wrapPieceToInstance(piece, partInstance._id)
+
+		// TODO - this is very circular...
+		ServerPlayoutAdLibAPI.innerStartAdLibPiece2Piece(this.cache, this.rundownPlaylist, rundown, partInstance, newPieceInstance)
+		
+		if (part === 'current') {
+			this.currentPartChanged = true
+		} else {
+			this.nextPartChanged = true
+		}
+
+		return unprotectString(newPieceInstance._id)
 	}
 	updatePieceInstance(pieceInstanceId: string, piece: Partial<IBlueprintPiece>): void {
 		throw new Error("Method not implemented.");
 	}
-	queuePart(part: IBlueprintPart, pieces: IBlueprintPiece[]): void {
-		throw new Error("Method not implemented.");
+	queuePart(rawPart: IBlueprintPart, rawPieces: IBlueprintPiece[]): void {
+		const currentPartInstance = this.rundownPlaylist.currentPartInstanceId ? this.cache.PartInstances.findOne(this.rundownPlaylist.currentPartInstanceId) : undefined
+		if (!currentPartInstance) {
+			throw new Error('Cannot queue part when no current partInstance')
+		}
+
+		const newPartInstance = new PartInstance({
+			_id: getRandomId(),
+			rundownId: currentPartInstance.rundownId,
+			segmentId: currentPartInstance.segmentId,
+			takeCount: -1, // Filled in later
+			part: new Part({
+				...rawPart,
+				_id: getRandomId(),
+				rundownId: currentPartInstance.rundownId,
+				segmentId: currentPartInstance.segmentId,
+				_rank: 99999, // something high, so it will be placed after current part. The rank will be updated later to its correct value
+				dynamicallyInserted: true,
+				notes: [], // TODO
+			})
+		})
+
+		if (!newPartInstance.part.isPlayable()) {
+			throw new Error('Cannot queue a part which is not playable')
+		}
+
+		const pieces = postProcessPieces(this, rawPieces, this.getShowStyleBase().blueprintId, currentPartInstance.rundownId, newPartInstance.part._id)
+		const newPieceInstances = pieces.map(piece => wrapPieceToInstance(piece, newPartInstance._id))
+
+		// TODO - this is very circular...
+		ServerPlayoutAdLibAPI.innerStartAdLibPiece2Queued(this.cache, this.rundownPlaylist, this.rundown, currentPartInstance, newPartInstance, newPieceInstances)
+
+		this.nextPartChanged = true
+
+		// // TODO-PartInstance - pending new data flow to insert. in future we dont want to be creating a part, only an instance
+		// this.cache.Parts.insert(part)
+		// pieces.forEach(piece => this.cache.Pieces.insert(piece))
+
+		// setNextPart(this.cache, this.rundownPlaylist, newPartInstance)
+
+
+		// throw new Error("Method not implemented.");
 	}
-	stopPieceOnLayers(sourceLayerIds: string[], timeOffset?: number | undefined): string[] {
+	stopPiecesOnLayers(sourceLayerIds: string[], timeOffset?: number | undefined): string[] {
 		if (sourceLayerIds.length == 0) {
 			return []
 		}
