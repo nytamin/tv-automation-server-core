@@ -102,7 +102,7 @@ Meteor.startup(() => {
 
 						ps.push(new Promise((resolve, reject) => {
 
-							PeripheralDeviceAPI.executeFunction(subDevice._id, (err) => {
+							PeripheralDeviceAPI.executeFunctionWithCustomTimeout(subDevice._id, (err) => {
 								if (err) {
 									logger.error('Cronjob: "' + subDevice._id + '": CasparCG restart error', err)
 									if ((err + '').match(/timeout/i)) {
@@ -119,7 +119,7 @@ Meteor.startup(() => {
 									logger.info('Cronjob: "' + subDevice._id + '": CasparCG restart done')
 									resolve()
 								}
-							}, 'restartCasparCG')
+							}, 10000, 'restartCasparCG')
 						}))
 					}
 				})
