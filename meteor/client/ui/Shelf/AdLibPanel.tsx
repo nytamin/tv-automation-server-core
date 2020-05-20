@@ -33,7 +33,7 @@ import { Piece, PieceGeneric } from '../../../lib/collections/Pieces'
 import { memoizedIsolatedAutorun } from '../../lib/reactiveData/reactiveDataHelper'
 import { PartInstance, PartInstances } from '../../../lib/collections/PartInstances'
 import { MeteorCall } from '../../../lib/api/methods'
-import { AdLibActions, AdLibActionCommon } from '../../../lib/collections/AdLibActions'
+import { AdLibActions, AdLibAction } from '../../../lib/collections/AdLibActions'
 import { RundownUtils } from '../../lib/rundown'
 import { PieceUi } from '../SegmentTimeline/SegmentTimelineContainer'
 
@@ -373,7 +373,7 @@ export interface AdLibPieceUi extends AdLibPiece {
 	isAction?: boolean
 	isClearSourceLayer?: boolean
 	userData?: any
-	adlibAction?: AdLibActionCommon
+	adlibAction?: AdLibAction
 }
 
 export interface AdlibSegmentUi extends DBSegment {
