@@ -48,6 +48,8 @@ import { Blueprints } from '../../../lib/collections/Blueprints'
 import { RundownPlaylist, RundownPlaylists, RundownPlaylistPlayoutData, RundownPlaylistId } from '../../../lib/collections/RundownPlaylists'
 import { getBlueprintOfRundown } from '../blueprints/cache'
 import { PartEventContext, RundownContext } from '../blueprints/context'
+import { NotesContext } from '../blueprints/context/context'
+import { ActionExecutionContext, ActionPartChange } from '../blueprints/context/adlibActions'
 import { IngestActions } from '../ingest/actions'
 import { updateTimeline } from './timeline'
 import {
@@ -75,10 +77,10 @@ import {
 	deactivateRundownPlaylistInner,
 	standDownStudio
 } from './actions'
-import { PieceResolved, getOrderedPiece, getResolvedPieces, convertAdLibToPieceInstance, convertPieceToAdLibPiece, orderPieces } from './pieces'
+import { PieceResolved, getResolvedPieces, orderPieces } from './pieces'
 import { PackageInfo } from '../../coreSystem'
 import { getActiveRundownPlaylistsInStudio } from './studio'
-import { updateSourceLayerInfinitesAfterPart, cropInfinitesOnLayer, stopInfinitesRunningOnLayer } from './infinites'
+import { updateSourceLayerInfinitesAfterPart } from './infinites'
 import { rundownPlaylistSyncFunction, RundownSyncFunctionPriority } from '../ingest/rundownInput'
 import { ServerPlayoutAdLibAPI } from './adlib'
 import { PieceInstances, PieceInstance, PieceInstanceId } from '../../../lib/collections/PieceInstances'
@@ -1252,6 +1254,95 @@ export namespace ServerPlayoutAPI {
 
 		return ServerPlayoutAdLibAPI.sourceLayerStickyPieceStart(rundownPlaylistId, sourceLayerId)
 	}
+	export function executeAction (rundownPlaylistId: RundownPlaylistId, actionId: string, userData: any) {
+		check(rundownPlaylistId, String)
+		check(actionId, String)
+		check(userData, Match.Any)
+
+		return executeActionInner(rundownPlaylistId, (context, cache, rundown) => {
+			const blueprint = getBlueprintOfRundown(rundown) // todo: database again
+			if (!blueprint.blueprint.executeAction) {
+				throw new Meteor.Error(400, 'ShowStyle blueprint does not support executing actions')
+			}
+
+			const res = blueprint.blueprint.executeAction(context, actionId, userData)
+			if (res) {
+				// TODO - timeout
+				waitForPromise(res)
+			}
+		})
+	}
+
+	export function executeActionInner(rundownPlaylistId: RundownPlaylistId, func: (context: ActionExecutionContext, cache: CacheForRundownPlaylist, rundown: Rundown, currentPartInstance: PartInstance) => void) {
+		return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
+			const tmpPlaylist = RundownPlaylists.findOne(rundownPlaylistId)
+			if (!tmpPlaylist) throw new Meteor.Error(404, `Rundown "${rundownPlaylistId}" not found!`)
+			if (!tmpPlaylist.active) throw new Meteor.Error(403, `Pieces can be only manipulated in an active rundown!`)
+			if (!tmpPlaylist.currentPartInstanceId) throw new Meteor.Error(400, `A part needs to be active to place a sticky item`)
+
+			const cache = waitForPromise(initCacheForRundownPlaylist(tmpPlaylist))
+			const playlist = cache.RundownPlaylists.findOne(rundownPlaylistId)
+			if (!playlist) throw new Meteor.Error(404, `Rundown "${rundownPlaylistId}" not found!`)
+
+			const currentPartInstance = playlist.currentPartInstanceId ? cache.PartInstances.findOne(playlist.currentPartInstanceId) : undefined
+			if (!currentPartInstance) throw new Meteor.Error(501, `Current PartInstance "${playlist.currentPartInstanceId}" could not be found.`)
+
+			const rundown = cache.Rundowns.findOne(currentPartInstance.rundownId)
+			if (!rundown) throw new Meteor.Error(501, `Current Rundown "${currentPartInstance.rundownId}" could not be found`)
+
+			const notesContext = new NotesContext(`${rundown.name}(${playlist.name})`, `playlist=${playlist._id},rundown=${rundown._id},currentPartInstance=${currentPartInstance._id}`, true)
+			const context = new ActionExecutionContext(cache, notesContext, playlist, rundown)
+
+			func(context, cache, rundown, currentPartInstance)
+
+			// TODO - can we safely block some operations if we are too close to an autonext?
+
+			// TODO - other side effects and bits to save/do
+
+			// Mark the parts as dirty if needed, so that they get a reimport on reset to undo any changes
+			if (context.currentPartState === ActionPartChange.MARK_DIRTY) {
+				cache.PartInstances.update(currentPartInstance._id, {
+					$set: {
+						'part.dirty': true
+					}
+				})
+				// TODO-PartInstance - pending new data flow
+				cache.Parts.update(currentPartInstance.part._id, {
+					$set: {
+						dirty: true
+					}
+				})
+			}
+			if (context.nextPartState === ActionPartChange.MARK_DIRTY) {
+				if (!playlist.nextPartInstanceId) throw new Meteor.Error(500, `Cannot mark non-existant partInstance as dirty`)
+				const nextPartInstance = cache.PartInstances.findOne(playlist.nextPartInstanceId)
+				if (!nextPartInstance) throw new Meteor.Error(500, `Cannot mark non-existant partInstance as dirty`)
+				
+				cache.PartInstances.update(nextPartInstance._id, {
+					$set: {
+						'part.dirty': true
+					}
+				})
+				// TODO-PartInstance - pending new data flow
+				cache.Parts.update(nextPartInstance.part._id, {
+					$set: {
+						dirty: true
+					}
+				})
+			}
+
+			if (context.currentPartState !== ActionPartChange.NONE || context.nextPartState !== ActionPartChange.NONE) {
+				// TODO - some of these could possibly be run more intelligently
+				updateSourceLayerInfinitesAfterPart(cache, rundown, currentPartInstance.part)
+			}
+
+			if (context.currentPartState || context.nextPartState) {
+				updateTimeline(cache, playlist.studioId)
+			}
+
+			waitForPromise(cache.saveAllToDatabase())
+		})
+	}
 	export function sourceLayerOnPartStop (rundownPlaylistId: RundownPlaylistId, partInstanceId: PartInstanceId, sourceLayerIds: string[]) {
 		check(rundownPlaylistId, String)
 		check(partInstanceId, String)
@@ -1259,6 +1350,7 @@ export namespace ServerPlayoutAPI {
 
 		if (_.isString(sourceLayerIds)) sourceLayerIds = [sourceLayerIds]
 
+		if (sourceLayerIds.length === 0) return
 
 		return rundownPlaylistSyncFunction(rundownPlaylistId, RundownSyncFunctionPriority.USER_PLAYOUT, () => {
 			let playlist = RundownPlaylists.findOne(rundownPlaylistId)
@@ -1279,52 +1371,7 @@ export namespace ServerPlayoutAPI {
 			const rundown = cache.Rundowns.findOne(partInstance.rundownId)
 			if (!rundown) throw new Meteor.Error(501, `Rundown "${partInstance.rundownId}" not found!`)
 
-			const now = getCurrentTime()
-			const relativeNow = now - lastStartedPlayback
-			const orderedPieces = getResolvedPieces(cache, partInstance)
-
-			orderedPieces.forEach((pieceInstance) => {
-				if (sourceLayerIds.indexOf(pieceInstance.piece.sourceLayerId) !== -1) {
-					if (!pieceInstance.piece.userDuration) {
-						let newExpectedDuration: number | undefined = undefined
-
-						if (pieceInstance.piece.infiniteId && pieceInstance.piece.infiniteId !== pieceInstance.piece._id) {
-							newExpectedDuration = now - lastStartedPlayback
-						} else if (
-							pieceInstance.piece.startedPlayback && // currently playing
-							(pieceInstance.resolvedStart || 0) < relativeNow && // is relative, and has started
-							!pieceInstance.piece.stoppedPlayback // and not yet stopped
-						) {
-							newExpectedDuration = now - pieceInstance.piece.startedPlayback
-						}
-
-						if (newExpectedDuration !== undefined) {
-							console.log(`Cropping PieceInstance "${pieceInstance._id}" to ${newExpectedDuration}`)
-
-							PieceInstances.update({
-								_id: pieceInstance._id
-							}, {
-								$set: {
-									'piece.userDuration': {
-										duration: newExpectedDuration
-									}
-								}
-							})
-
-							// TODO-PartInstance - pending new data flow
-							Pieces.update({
-								_id: pieceInstance.piece._id
-							}, {
-								$set: {
-									userDuration: {
-										duration: newExpectedDuration
-									}
-								}
-							})
-						}
-					}
-				}
-			})
+			ServerPlayoutAdLibAPI.innerStopPieces(cache, partInstance, pieceInstance => sourceLayerIds.indexOf(pieceInstance.piece.sourceLayerId) !== -1, undefined)
 
 			updateSourceLayerInfinitesAfterPart(cache, rundown, partInstance.part)
 

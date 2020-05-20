@@ -28,8 +28,7 @@ import { handleRundownPlaylistReloadResponse } from '../RundownView'
 import { RundownPlaylist, RundownPlaylists, RundownPlaylistId, getAllNotesForSegmentAndParts } from '../../../lib/collections/RundownPlaylists'
 import { MeteorCall } from '../../../lib/api/methods'
 import { getSegmentPartNotes } from '../../../lib/rundownNotifications'
-import { ReactiveArray } from '../../../lib/typings/reactivearray'
-import { RankedPartNote, IMediaObjectIssue } from '../../../lib/api/rundownNotifications'
+import { RankedNote, IMediaObjectIssue } from '../../../lib/api/rundownNotifications'
 
 export const onRONotificationClick = new ReactiveVar<((e: RONotificationEvent) => void) | undefined>(undefined)
 export const reloadRundownPlaylistClick = new ReactiveVar<((e: any) => void) | undefined>(undefined)
@@ -350,8 +349,8 @@ class RundownViewNotifier extends WithManagedTracker {
 			}
 		})
 
-		const fullNotes: ReactiveVar<RankedPartNote[]> = new ReactiveVar([], _.isEqual)
-		const localNotes: ReactiveVar<RankedPartNote[]> = new ReactiveVar([], _.isEqual)
+		const fullNotes: ReactiveVar<RankedNote[]> = new ReactiveVar([], _.isEqual)
+		const localNotes: ReactiveVar<RankedNote[]> = new ReactiveVar([], _.isEqual)
 
 		let oldNoteIds: Array<string> = []
 
