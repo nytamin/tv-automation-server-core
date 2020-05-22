@@ -1,10 +1,9 @@
-import { NoraPayload, NoraContent } from 'tv-automation-sofie-blueprints-integration'
-import { InternalIBlueprintPieceGeneric } from '../../../../lib/collections/Pieces'
+import { NoraPayload, NoraContent, IBlueprintPieceGeneric } from 'tv-automation-sofie-blueprints-integration'
 import { generateMosPluginItemXml } from '../../parsers/mos/mosXml2Js'
 
 export { createMosObjectXmlStringNoraBluePrintPiece }
 
-function createMosObjectXmlStringNoraBluePrintPiece(piece: InternalIBlueprintPieceGeneric): string {
+function createMosObjectXmlStringNoraBluePrintPiece(piece: IBlueprintPieceGeneric): string {
 	if (!piece.content || !piece.content.payload) {
 		throw new Error('Not a Nora blueprint piece')
 	}

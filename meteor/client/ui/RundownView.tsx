@@ -1309,6 +1309,11 @@ export const RundownView = translateWithTracker<IProps, IState, ITrackedProps>((
 							$in: rundownIDs
 						}
 					})
+					this.subscribe(PubSub.adLibActions, {
+						rundownId: {
+							$in: rundownIDs
+						}
+					})
 				}
 			})
 			this.autorun(() => {

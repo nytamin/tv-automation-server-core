@@ -2,7 +2,7 @@ import { check } from 'meteor/check'
 import { Meteor } from 'meteor/meteor'
 import { ExpectedMediaItems, ExpectedMediaItem, ExpectedMediaItemId } from '../../lib/collections/ExpectedMediaItems'
 import { Rundowns, RundownId } from '../../lib/collections/Rundowns'
-import { Pieces, PieceGeneric, PieceId } from '../../lib/collections/Pieces'
+import { Pieces, PieceGeneric, PieceId, RundownPieceGeneric } from '../../lib/collections/Pieces'
 import { AdLibPieces } from '../../lib/collections/AdLibPieces'
 import { syncFunctionIgnore } from '../codeControl'
 import { saveIntoDb, getCurrentTime, getHash, protectString } from '../../lib/lib'
@@ -21,7 +21,7 @@ export enum PieceType {
 
 // TODO-PartInstance generate these for when the part has no need, but the instance still references something
 
-function generateExpectedMediaItems(rundownId: RundownId, studioId: StudioId, piece: PieceGeneric, pieceType: string): ExpectedMediaItem[] {
+function generateExpectedMediaItems(rundownId: RundownId, studioId: StudioId, piece: RundownPieceGeneric, pieceType: string): ExpectedMediaItem[] {
 	const result: ExpectedMediaItem[] = []
 
 	if (piece.content && piece.content.fileName && piece.content.path && piece.content.mediaFlowIds && piece.partId) {
@@ -60,8 +60,8 @@ export const cleanUpExpectedMediaItemForBucketAdLibPiece: (adLibIds: PieceId[]) 
 		logger.info(`Removed ${removedItems} expected media items for deleted bucket adLib items`)
 	})
 
-export const updateExpectedMediaItemForBucketAdLibPiece: (cache: CacheForRundownPlaylist, adLibId: PieceId, bucketId: BucketId) => void
-	= syncFunctionIgnore(function updateExpectedMediaItemForBucketAdLibPiece(cache: CacheForRundownPlaylist, adLibId: PieceId, bucketId: BucketId) {
+export const updateExpectedMediaItemForBucketAdLibPiece: (adLibId: PieceId, bucketId: BucketId) => void
+	= syncFunctionIgnore(function updateExpectedMediaItemForBucketAdLibPiece(adLibId: PieceId, bucketId: BucketId) {
 		check(adLibId, String)
 
 		const piece = BucketAdLibs.findOne(adLibId)
@@ -116,7 +116,7 @@ export const updateExpectedMediaItemsOnRundown: (cache: CacheForRundownPlaylist,
 
 			const eMIs: ExpectedMediaItem[] = []
 
-			function iterateOnPieceLike(piece: PieceGeneric, pieceType: string) {
+			function iterateOnPieceLike(piece: RundownPieceGeneric, pieceType: string) {
 				eMIs.push(...generateExpectedMediaItems(rundownId, studioId, piece, pieceType))
 			}
 
@@ -170,7 +170,7 @@ export const updateExpectedMediaItemsOnPart: (cache: CacheForRundownPlaylist, ru
 				partId: part._id
 			})
 
-			function iterateOnPieceLike(piece: PieceGeneric, pieceType: string) {
+			function iterateOnPieceLike(piece: RundownPieceGeneric, pieceType: string) {
 				eMIs.push(...generateExpectedMediaItems(rundownId, studioId, piece, pieceType))
 			}
 

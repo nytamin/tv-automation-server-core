@@ -715,7 +715,7 @@ export function fetchAndFilter(props: Translated<IAdLibPanelProps>): IAdLibPanel
 					})
 					, 'globalAdLibActions', rundownIds)
 
-				rundownBaselineAdLibs.concat(globalAdLibActions)
+				rundownBaselineAdLibs = rundownBaselineAdLibs.concat(globalAdLibActions)
 
 				return rundownBaselineAdLibs
 			}, 'rundownBaselineAdLibs', currentRundown._id, sourceLayerLookup, props.showStyleBase.sourceLayers, sourceHotKeyUse)
