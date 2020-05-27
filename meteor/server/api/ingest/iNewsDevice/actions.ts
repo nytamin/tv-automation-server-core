@@ -8,11 +8,19 @@ import * as _ from 'underscore'
 import { ReloadRundownResponse } from '../../../../lib/api/userActions'
 
 export namespace INewsDeviceActions {
-	export const reloadRundown: (peripheralDevice: PeripheralDevice, rundown: Rundown) => ReloadRundownResponse = Meteor.wrapAsync(
-		function reloadRundown (peripheralDevice: PeripheralDevice, rundown: Rundown, cb: WrapAsyncCallback<ReloadRundownResponse>): void {
-			logger.info('reloadRundown ' + rundown._id)
+	export const reloadRundown: (
+		peripheralDevice: PeripheralDevice,
+		rundown: Rundown
+	) => ReloadRundownResponse = Meteor.wrapAsync(function reloadRundown(
+		peripheralDevice: PeripheralDevice,
+		rundown: Rundown,
+		cb: WrapAsyncCallback<ReloadRundownResponse>
+	): void {
+		logger.info('reloadRundown ' + rundown._id)
 
-			PeripheralDeviceAPI.executeFunction(peripheralDevice._id, (err: Error, iNewsRunningOrder: any) => {
+		PeripheralDeviceAPI.executeFunction(
+			peripheralDevice._id,
+			(err: Error, iNewsRunningOrder: any) => {
 				if (err) {
 					if (_.isString(err) && err.match(/rundown does not exist/i)) {
 						// Don't throw an error, instead return MISSING value
@@ -36,7 +44,9 @@ export namespace INewsDeviceActions {
 						cb(e)
 					}
 				}
-			}, 'triggerGetRunningOrder', rundown.externalId)
-		}
-	)
+			},
+			'triggerGetRunningOrder',
+			rundown.externalId
+		)
+	})
 }

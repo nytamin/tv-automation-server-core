@@ -25,26 +25,26 @@ interface IState {
 }
 
 export class MultiSelect extends React.Component<IProps, IState> {
-	constructor (props: IProps) {
+	constructor(props: IProps) {
 		super(props)
 
 		this.state = {
 			checkedValues: {},
-			expanded: false
+			expanded: false,
 		}
 	}
 
-	componentDidMount () {
+	componentDidMount() {
 		this.refreshChecked()
 	}
 
-	componentDidUpdate (prevProps: IProps) {
+	componentDidUpdate(prevProps: IProps) {
 		if (this.props.value !== prevProps.value) {
 			this.refreshChecked()
 		}
 	}
 
-	refreshChecked () {
+	refreshChecked() {
 		if (this.props.value && _.isArray(this.props.value)) {
 			const checkedValues: _.Dictionary<boolean> = {}
 			_.forEach(this.props.value, (value, index) => {
@@ -52,11 +52,11 @@ export class MultiSelect extends React.Component<IProps, IState> {
 			})
 
 			this.setState({
-				checkedValues
+				checkedValues,
 			})
 		} else {
 			this.setState({
-				checkedValues: {}
+				checkedValues: {},
 			})
 		}
 	}
@@ -67,14 +67,18 @@ export class MultiSelect extends React.Component<IProps, IState> {
 		const valueUpdate = _.extend(this.state.checkedValues, obj)
 
 		this.setState({
-			checkedValues: valueUpdate
+			checkedValues: valueUpdate,
 		})
 
 		if (this.props.onChange && typeof this.props.onChange === 'function') {
 			this.props.onChange({
-				selectedValues: _.compact(_.values(_.mapObject(valueUpdate, (value, key) => {
-					return value ? key : null
-				})))
+				selectedValues: _.compact(
+					_.values(
+						_.mapObject(valueUpdate, (value, key) => {
+							return value ? key : null
+						})
+					)
+				),
 			})
 		}
 	}
@@ -84,50 +88,68 @@ export class MultiSelect extends React.Component<IProps, IState> {
 	}
 
 	generateSummary = () => {
-		return _.compact(_.values(_.mapObject(this.state.checkedValues, (value, key) => {
-			return value ? (this.props.availableOptions[key] || key) : null
-		}))).join(', ')
+		return _.compact(
+			_.values(
+				_.mapObject(this.state.checkedValues, (value, key) => {
+					return value ? this.props.availableOptions[key] || key : null
+				})
+			)
+		).join(', ')
 	}
 
 	toggleExpco = () => {
 		this.setState({
-			expanded: !this.state.expanded
+			expanded: !this.state.expanded,
 		})
 	}
 
-	render () {
+	render() {
 		const summary = this.generateSummary()
 		return (
-			<div className={ClassNames('expco focusable subtle', {
-				'expco-expanded': this.state.expanded
-			}, this.props.className)}>
-				<div className={ClassNames('expco-title focusable-main', {
-					'placeholder': !summary
-				})} onClick={this.toggleExpco}>{summary || this.props.placeholder || ''}</div>
-				<a className='action-btn right expco-expand subtle' onClick={this.toggleExpco}>
+			<div
+				className={ClassNames(
+					'expco focusable subtle',
+					{
+						'expco-expanded': this.state.expanded,
+					},
+					this.props.className
+				)}>
+				<div
+					className={ClassNames('expco-title focusable-main', {
+						placeholder: !summary,
+					})}
+					onClick={this.toggleExpco}>
+					{summary || this.props.placeholder || ''}
+				</div>
+				<a className="action-btn right expco-expand subtle" onClick={this.toggleExpco}>
 					<FontAwesomeIcon icon={faChevronUp} />
 				</a>
-				<div className='expco-body bd'>
-					{
-						_.values(_.mapObject(this.props.availableOptions, (value, key) => {
+				<div className="expco-body bd">
+					{_.values(
+						_.mapObject(this.props.availableOptions, (value, key) => {
 							return (
-								<p className='expco-item' key={key}>
-									<label className='action-btn'>
-										<span className='checkbox'>
-											<input type='checkbox'
-												className='form-control'
+								<p className="expco-item" key={key}>
+									<label className="action-btn">
+										<span className="checkbox">
+											<input
+												type="checkbox"
+												className="form-control"
 												checked={this.isChecked(key)}
 												onChange={() => this.handleChange(key)}
 											/>
-											<span className='checkbox-checked'><FontAwesomeIcon icon={faCheckSquare} /></span>
-											<span className='checkbox-unchecked'><FontAwesomeIcon icon={faSquare} /></span>
+											<span className="checkbox-checked">
+												<FontAwesomeIcon icon={faCheckSquare} />
+											</span>
+											<span className="checkbox-unchecked">
+												<FontAwesomeIcon icon={faSquare} />
+											</span>
 										</span>
 										{value}
 									</label>
 								</p>
 							)
-						}))
-					}
+						})
+					)}
 				</div>
 			</div>
 		)

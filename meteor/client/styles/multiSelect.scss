@@ -10,13 +10,14 @@
 			position: static;
 
 			.checkbox {
-				.checkbox-checked, .checkbox-unchecked {
+				.checkbox-checked,
+				.checkbox-unchecked {
 					top: -3px;
 				}
 			}
 		}
 	}
-	
+
 	.expco-title.focusable-main {
 		&.placeholder {
 			color: #bbb;
@@ -35,7 +36,7 @@
 	padding-top: 0;
 	padding-bottom: 0;
 
-	&.expco-expanded  {
+	&.expco-expanded {
 		z-index: 2;
 	}
 

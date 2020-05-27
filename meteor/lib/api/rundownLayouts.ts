@@ -7,18 +7,22 @@ import {
 	RundownLayoutElementBase,
 	RundownLayoutFilterBase,
 	RundownLayoutElementType,
-	RundownLayoutExternalFrame
+	RundownLayoutExternalFrame,
 } from '../collections/RundownLayouts'
 import { ShowStyleBaseId } from '../collections/ShowStyleBases'
 
 export interface NewRundownLayoutsAPI {
-	createRundownLayout(name: string, type: RundownLayoutType, showStyleBaseId: ShowStyleBaseId): Promise<RundownLayoutId>
+	createRundownLayout(
+		name: string,
+		type: RundownLayoutType,
+		showStyleBaseId: ShowStyleBaseId
+	): Promise<RundownLayoutId>
 	removeRundownLayout(id: RundownLayoutId): Promise<void>
 }
 
 export enum RundownLayoutsAPIMethods {
 	'removeRundownLayout' = 'rundownLayout.removeRundownLayout',
-	'createRundownLayout' = 'rundownLayout.createRundownLayout'
+	'createRundownLayout' = 'rundownLayout.createRundownLayout',
 }
 
 export namespace RundownLayoutsAPI {

@@ -15,7 +15,7 @@ export namespace mousetrapHelper {
 		[key: string]: IWrappedCallback[]
 	} = {}
 
-	function handleKey (keys: string, e: ExtendedKeyboardEvent) {
+	function handleKey(keys: string, e: ExtendedKeyboardEvent) {
 		if (_boundHotkeys[keys] === undefined) {
 			return
 		}
@@ -28,7 +28,13 @@ export namespace mousetrapHelper {
 		})
 	}
 
-	export function bindGlobal (keys: string, callback: (e: Event) => void, action?: string, tag?: string, allowInModal?: boolean) {
+	export function bindGlobal(
+		keys: string,
+		callback: (e: Event) => void,
+		action?: string,
+		tag?: string,
+		allowInModal?: boolean
+	) {
 		let index = keys
 		if (action) index = keys + '_' + action
 		if (
@@ -38,9 +44,13 @@ export namespace mousetrapHelper {
 			_boundHotkeys[index].reduce((mem, i) => mem || i.isGlobal, false) === false
 		) {
 			if (_boundHotkeys[index] === undefined) _boundHotkeys[index] = []
-			mousetrap.bindGlobal(keys, (e: ExtendedKeyboardEvent) => {
-				handleKey(index, e)
-			}, action)
+			mousetrap.bindGlobal(
+				keys,
+				(e: ExtendedKeyboardEvent) => {
+					handleKey(index, e)
+				},
+				action
+			)
 		}
 		// console.log(`Registering callback for key combo "${keys}"`)
 
@@ -48,18 +58,28 @@ export namespace mousetrapHelper {
 			isGlobal: true,
 			allowInModal: !!allowInModal,
 			original: callback,
-			tag
+			tag,
 		})
 	}
 
-	export function bind (keys: string, callback: (e: Event) => void, action?: string, tag?: string, allowInModal?: boolean) {
+	export function bind(
+		keys: string,
+		callback: (e: Event) => void,
+		action?: string,
+		tag?: string,
+		allowInModal?: boolean
+	) {
 		let index = keys
 		if (action) index = keys + '_' + action
 		if (_boundHotkeys[index] === undefined) {
 			_boundHotkeys[index] = []
-			mousetrap.bind(keys, (e: ExtendedKeyboardEvent) => {
-				handleKey(index, e)
-			}, action)
+			mousetrap.bind(
+				keys,
+				(e: ExtendedKeyboardEvent) => {
+					handleKey(index, e)
+				},
+				action
+			)
 		}
 		// console.log(`Registering callback for key combo "${keys}"`)
 
@@ -67,12 +87,12 @@ export namespace mousetrapHelper {
 			isGlobal: false,
 			allowInModal: !!allowInModal,
 			original: callback,
-			tag
+			tag,
 		})
 	}
 
-	export function unbindAll (keys: string[], action?: string, tag?: string) {
-		keys.forEach(key => {
+	export function unbindAll(keys: string[], action?: string, tag?: string) {
+		keys.forEach((key) => {
 			if (!tag) {
 				let index = key
 				if (action) index = key + '_' + action
@@ -85,7 +105,7 @@ export namespace mousetrapHelper {
 		})
 	}
 
-	export function unbind (keys: string, callbackOrTag: ((e: Event) => void) | string, action?: string) {
+	export function unbind(keys: string, callbackOrTag: ((e: Event) => void) | string, action?: string) {
 		let index = keys
 		if (action) index = keys + '_' + action
 
@@ -110,18 +130,20 @@ export namespace mousetrapHelper {
 		}
 	}
 
-	export function shortcutLabel (hotkey: string, isMacLike: boolean = false): string {
+	export function shortcutLabel(hotkey: string, isMacLike: boolean = false): string {
 		if (isMacLike) {
 			hotkey = hotkey.replace(/mod/i, '\u2318')
 		} else {
 			hotkey = hotkey.replace(/mod/i, 'Ctrl')
 		}
 		// capitalize first letter of each combo key
-		hotkey = hotkey.replace(/(\w)\w*/ig, (substring: string) => {
-			return substring.substr(0, 1).toUpperCase() + substring.substr(1).toLowerCase()
-		}).replace(/(\s*,\s*)/g, (separator: string) => {
-			return ', '
-		})
+		hotkey = hotkey
+			.replace(/(\w)\w*/gi, (substring: string) => {
+				return substring.substr(0, 1).toUpperCase() + substring.substr(1).toLowerCase()
+			})
+			.replace(/(\s*,\s*)/g, (separator: string) => {
+				return ', '
+			})
 
 		return hotkey
 	}
@@ -152,5 +174,5 @@ mousetrap.addKeycodes({
 	110: 'numDot',
 	111: 'numDiv',
 	187: 'add',
-	188: 'comma'
+	188: 'comma',
 })

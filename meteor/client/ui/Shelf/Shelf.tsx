@@ -18,7 +18,15 @@ import { RundownViewKbdShortcuts } from '../RundownView'
 import { HotkeyHelpPanel } from './HotkeyHelpPanel'
 import { ShowStyleBase } from '../../../lib/collections/ShowStyleBases'
 import { getElementDocumentOffset } from '../../utils/positions'
-import { RundownLayout, RundownLayoutBase, RundownLayoutType, DashboardLayout, DashboardLayoutFilter, DashboardLayoutActionButton, RundownLayoutFilter } from '../../../lib/collections/RundownLayouts'
+import {
+	RundownLayout,
+	RundownLayoutBase,
+	RundownLayoutType,
+	DashboardLayout,
+	DashboardLayoutFilter,
+	DashboardLayoutActionButton,
+	RundownLayoutFilter,
+} from '../../../lib/collections/RundownLayouts'
 import { OverflowingContainer } from './OverflowingContainer'
 import { UIStateStorage } from '../../lib/UIStateStorage'
 import { RundownLayoutsAPI } from '../../../lib/api/rundownLayouts'
@@ -38,7 +46,7 @@ export enum ShelfTabs {
 	ADLIB = 'adlib',
 	ADLIB_LAYOUT_FILTER = 'adlib_layout_filter',
 	GLOBAL_ADLIB = 'global_adlib',
-	SYSTEM_HOTKEYS = 'system_hotkeys'
+	SYSTEM_HOTKEYS = 'system_hotkeys',
 }
 export interface IShelfProps {
 	isExpanded: boolean
@@ -54,10 +62,12 @@ export interface IShelfProps {
 	fullViewport?: boolean
 
 	onChangeExpanded: (value: boolean) => void
-	onRegisterHotkeys: (hotkeys: Array<{
-		key: string
-		label: string
-	}>) => void
+	onRegisterHotkeys: (
+		hotkeys: Array<{
+			key: string
+			label: string
+		}>
+	) => void
 	onChangeBottomMargin?: (newBottomMargin: string) => void
 }
 
@@ -78,16 +88,16 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 		x: number
 		y: number
 	} = {
-			x: 0,
-			y: 0
-		}
+		x: 0,
+		y: 0,
+	}
 	private _mouseOffset: {
 		x: number
 		y: number
 	} = {
-			x: 0,
-			y: 0
-		}
+		x: 0,
+		y: 0,
+	}
 	private _mouseDown: number
 
 	private bindKeys: Array<{
@@ -105,9 +115,11 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 			moving: false,
 			shelfHeight: localStorage.getItem('rundownView.shelf.shelfHeight') || '50vh',
 			overrideHeight: undefined,
-			selectedTab: UIStateStorage.getItem(`rundownView.${props.playlist._id}`, 'shelfTab', undefined) as (string | undefined),
+			selectedTab: UIStateStorage.getItem(`rundownView.${props.playlist._id}`, 'shelfTab', undefined) as
+				| string
+				| undefined,
 			shouldQueue: false,
-			selectedPiece: undefined
+			selectedPiece: undefined,
 		}
 
 		const { t } = props
@@ -116,7 +128,7 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 			{
 				key: RundownViewKbdShortcuts.RUNDOWN_TOGGLE_SHELF,
 				up: this.keyToggleShelf,
-				label: t('Toggle Shelf')
+				label: t('Toggle Shelf'),
 			},
 			// {
 			// 	key: RundownViewKbdShortcuts.RUNDOWN_RESET_FOCUS,
@@ -136,19 +148,31 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 		_.each(this.bindKeys, (k) => {
 			const method = k.global ? mousetrap.bindGlobal : mousetrap.bind
 			if (k.up) {
-				method(k.key, (e: KeyboardEvent) => {
-					preventDefault(e)
-					if (k.up) k.up(e)
-				}, 'keyup')
-				method(k.key, (e: KeyboardEvent) => {
-					preventDefault(e)
-				}, 'keydown')
+				method(
+					k.key,
+					(e: KeyboardEvent) => {
+						preventDefault(e)
+						if (k.up) k.up(e)
+					},
+					'keyup'
+				)
+				method(
+					k.key,
+					(e: KeyboardEvent) => {
+						preventDefault(e)
+					},
+					'keydown'
+				)
 			}
 			if (k.down) {
-				method(k.key, (e: KeyboardEvent) => {
-					preventDefault(e)
-					if (k.down) k.down(e)
-				}, 'keydown')
+				method(
+					k.key,
+					(e: KeyboardEvent) => {
+						preventDefault(e)
+						if (k.down) k.down(e)
+					},
+					'keydown'
+				)
 			}
 		})
 
@@ -169,7 +193,7 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 	}
 
 	componentDidUpdate(prevProps: IShelfProps, prevState: IState) {
-		if ((prevProps.isExpanded !== this.props.isExpanded) || (prevState.shelfHeight !== this.state.shelfHeight)) {
+		if (prevProps.isExpanded !== this.props.isExpanded || prevState.shelfHeight !== this.state.shelfHeight) {
 			if (this.props.onChangeBottomMargin && typeof this.props.onChangeBottomMargin === 'function') {
 				// console.log(this.state.expanded, this.getHeight())
 				this.props.onChangeBottomMargin(this.getHeight() || '0px')
@@ -180,11 +204,15 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 	}
 
 	restoreDefaultTab() {
-		if (this.state.selectedTab === undefined && this.props.rundownLayout && RundownLayoutsAPI.isRundownLayout(this.props.rundownLayout)) {
-			const defaultTab = this.props.rundownLayout.filters.find(i => (i as RundownLayoutFilter).default)
+		if (
+			this.state.selectedTab === undefined &&
+			this.props.rundownLayout &&
+			RundownLayoutsAPI.isRundownLayout(this.props.rundownLayout)
+		) {
+			const defaultTab = this.props.rundownLayout.filters.find((i) => (i as RundownLayoutFilter).default)
 			if (defaultTab) {
 				this.setState({
-					selectedTab: `${ShelfTabs.ADLIB_LAYOUT_FILTER}_${defaultTab._id}`
+					selectedTab: `${ShelfTabs.ADLIB_LAYOUT_FILTER}_${defaultTab._id}`,
 				})
 			}
 		}
@@ -196,18 +224,19 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 	}
 
 	getTop(newState?: boolean): string | undefined {
-		return this.state.overrideHeight ?
-			((this.state.overrideHeight / window.innerHeight) * 100) + 'vh' :
-			((newState !== undefined ? newState : this.props.isExpanded) ?
-				this.state.shelfHeight
-				:
-				undefined)
+		return this.state.overrideHeight
+			? (this.state.overrideHeight / window.innerHeight) * 100 + 'vh'
+			: (newState !== undefined
+				? newState
+				: this.props.isExpanded)
+			? this.state.shelfHeight
+			: undefined
 	}
 
 	getStyle() {
 		return {
-			'top': this.getTop(),
-			'transition': this.state.moving ? '' : '0.5s top ease-out'
+			top: this.getTop(),
+			transition: this.state.moving ? '' : '0.5s top ease-out',
 		}
 	}
 
@@ -250,7 +279,7 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 		}
 
 		this.setState({
-			overrideHeight: e.clientY + this._mouseOffset.y
+			overrideHeight: e.clientY + this._mouseOffset.y,
 		})
 
 		e.preventDefault()
@@ -272,7 +301,7 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 
 	touchMoveHandle = (e: TouchEvent) => {
 		this.setState({
-			overrideHeight: e.touches[0].clientY + this._mouseOffset.y
+			overrideHeight: e.touches[0].clientY + this._mouseOffset.y,
 		})
 
 		e.preventDefault()
@@ -290,11 +319,11 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 
 	touchOnHandle = (e: React.TouchEvent<HTMLDivElement>) => {
 		document.addEventListener('touchmove', this.touchMoveHandle, {
-			passive: false
+			passive: false,
 		})
 		document.addEventListener('touchcancel', this.touchOffHandle)
 		document.addEventListener('touchend', this.touchOffHandle, {
-			passive: false
+			passive: false,
 		})
 
 		if (e.touches.length > 1) {
@@ -310,15 +339,15 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 	endResize = () => {
 		let stateChange = {
 			moving: false,
-			overrideHeight: undefined
+			overrideHeight: undefined,
 		}
 
 		let shouldBeExpanded: boolean = false
 
 		if (Date.now() - this._mouseDown > 350) {
-			if (this.state.overrideHeight && (window.innerHeight - this.state.overrideHeight > CLOSE_MARGIN)) {
+			if (this.state.overrideHeight && window.innerHeight - this.state.overrideHeight > CLOSE_MARGIN) {
 				stateChange = _.extend(stateChange, {
-					shelfHeight: (Math.max(0.1, 0, this.state.overrideHeight / window.innerHeight) * 100) + 'vh',
+					shelfHeight: Math.max(0.1, 0, this.state.overrideHeight / window.innerHeight) * 100 + 'vh',
 				})
 				shouldBeExpanded = true
 			} else {
@@ -344,8 +373,8 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 
 		const handlePosition = getElementDocumentOffset(targetElement.parentElement)
 		if (handlePosition) {
-			this._mouseOffset.x = (handlePosition.left - window.scrollX) - this._mouseStart.x
-			this._mouseOffset.y = (handlePosition.top - window.scrollY) - this._mouseStart.y
+			this._mouseOffset.x = handlePosition.left - window.scrollX - this._mouseStart.x
+			this._mouseOffset.y = handlePosition.top - window.scrollY - this._mouseStart.y
 		}
 
 		this._mouseDown = Date.now()
@@ -353,13 +382,13 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 		document.body.style.cursor = 'grabbing'
 
 		this.setState({
-			moving: true
+			moving: true,
 		})
 	}
 
 	switchTab = (tab: string) => {
 		this.setState({
-			selectedTab: tab
+			selectedTab: tab,
 		})
 
 		UIStateStorage.setItem(`rundownView.${this.props.playlist._id}`, 'shelfTab', tab)
@@ -367,80 +396,88 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 
 	selectPiece = (piece: PieceUi) => {
 		this.setState({
-			selectedPiece: piece
+			selectedPiece: piece,
 		})
 	}
 
 	changeQueueAdLib = (shouldQueue: boolean, e: any) => {
 		this.setState({
-			shouldQueue
+			shouldQueue,
 		})
 	}
 
 	render() {
 		const { t, fullViewport } = this.props
 		return (
-			<div className={ClassNames('rundown-view__shelf dark', {
-				'full-viewport': fullViewport,
-				'moving': this.state.moving
-			})} style={fullViewport ? undefined : this.getStyle()}>
-				{!fullViewport && <div className='rundown-view__shelf__handle dark' tabIndex={0} onMouseDown={this.grabHandle} onTouchStart={this.touchOnHandle}>
-					<FontAwesomeIcon icon={faBars} />
-				</div>}
-				<div className='rundown-view__shelf__contents'>
+			<div
+				className={ClassNames('rundown-view__shelf dark', {
+					'full-viewport': fullViewport,
+					moving: this.state.moving,
+				})}
+				style={fullViewport ? undefined : this.getStyle()}>
+				{!fullViewport && (
+					<div
+						className="rundown-view__shelf__handle dark"
+						tabIndex={0}
+						onMouseDown={this.grabHandle}
+						onTouchStart={this.touchOnHandle}>
+						<FontAwesomeIcon icon={faBars} />
+					</div>
+				)}
+				<div className="rundown-view__shelf__contents">
 					<ContextMenuTrigger
-						id='bucket-context-menu'
+						id="bucket-context-menu"
 						attributes={{
-							className: 'rundown-view__shelf__contents__pane fill'
+							className: 'rundown-view__shelf__contents__pane fill',
 						}}
 						holdToDisplay={contextMenuHoldToDisplayTime()}>
 						<ErrorBoundary>
-							{
-								(this.props.rundownLayout && RundownLayoutsAPI.isRundownLayout(this.props.rundownLayout)) ?
-									<ShelfRundownLayout
-										playlist={this.props.playlist}
-										showStyleBase={this.props.showStyleBase}
-										studioMode={this.props.studioMode}
-										hotkeys={this.props.hotkeys}
-										rundownLayout={this.props.rundownLayout}
-										selectedTab={this.state.selectedTab}
-										selectedPiece={this.state.selectedPiece}
-										onSelectPiece={this.selectPiece}
-										onSwitchTab={this.switchTab}
-									/> :
-									(this.props.rundownLayout && RundownLayoutsAPI.isDashboardLayout(this.props.rundownLayout)) ?
-										<ShelfDashboardLayout
-											playlist={this.props.playlist}
-											showStyleBase={this.props.showStyleBase}
-											buckets={this.props.buckets}
-											studioMode={this.props.studioMode}
-											rundownLayout={this.props.rundownLayout}
-											shouldQueue={this.state.shouldQueue}
-											onChangeQueueAdLib={this.changeQueueAdLib}
-										/> :
-										(this.props.rundownLayout && RundownLayoutsAPI.isDashboardLayout(this.props.rundownLayout)) ?
-											<ShelfDashboardLayout
-												playlist={this.props.playlist}
-												showStyleBase={this.props.showStyleBase}
-												buckets={this.props.buckets}
-												studioMode={this.props.studioMode}
-												rundownLayout={this.props.rundownLayout}
-												shouldQueue={this.state.shouldQueue}
-												onChangeQueueAdLib={this.changeQueueAdLib}
-											/> :
-											// ultimate fallback if not found
-											<ShelfRundownLayout
-												playlist={this.props.playlist}
-												showStyleBase={this.props.showStyleBase}
-												studioMode={this.props.studioMode}
-												hotkeys={this.props.hotkeys}
-												rundownLayout={undefined}
-												selectedTab={this.state.selectedTab}
-												selectedPiece={this.state.selectedPiece}
-												onSelectPiece={this.selectPiece}
-												onSwitchTab={this.switchTab}
-											/>
-							}
+							{this.props.rundownLayout && RundownLayoutsAPI.isRundownLayout(this.props.rundownLayout) ? (
+								<ShelfRundownLayout
+									playlist={this.props.playlist}
+									showStyleBase={this.props.showStyleBase}
+									studioMode={this.props.studioMode}
+									hotkeys={this.props.hotkeys}
+									rundownLayout={this.props.rundownLayout}
+									selectedTab={this.state.selectedTab}
+									selectedPiece={this.state.selectedPiece}
+									onSelectPiece={this.selectPiece}
+									onSwitchTab={this.switchTab}
+								/>
+							) : this.props.rundownLayout && RundownLayoutsAPI.isDashboardLayout(this.props.rundownLayout) ? (
+								<ShelfDashboardLayout
+									playlist={this.props.playlist}
+									showStyleBase={this.props.showStyleBase}
+									buckets={this.props.buckets}
+									studioMode={this.props.studioMode}
+									rundownLayout={this.props.rundownLayout}
+									shouldQueue={this.state.shouldQueue}
+									onChangeQueueAdLib={this.changeQueueAdLib}
+								/>
+							) : this.props.rundownLayout && RundownLayoutsAPI.isDashboardLayout(this.props.rundownLayout) ? (
+								<ShelfDashboardLayout
+									playlist={this.props.playlist}
+									showStyleBase={this.props.showStyleBase}
+									buckets={this.props.buckets}
+									studioMode={this.props.studioMode}
+									rundownLayout={this.props.rundownLayout}
+									shouldQueue={this.state.shouldQueue}
+									onChangeQueueAdLib={this.changeQueueAdLib}
+								/>
+							) : (
+								// ultimate fallback if not found
+								<ShelfRundownLayout
+									playlist={this.props.playlist}
+									showStyleBase={this.props.showStyleBase}
+									studioMode={this.props.studioMode}
+									hotkeys={this.props.hotkeys}
+									rundownLayout={undefined}
+									selectedTab={this.state.selectedTab}
+									selectedPiece={this.state.selectedPiece}
+									onSelectPiece={this.selectPiece}
+									onSwitchTab={this.switchTab}
+								/>
+							)}
 						</ErrorBoundary>
 					</ContextMenuTrigger>
 					<ErrorBoundary>
@@ -458,5 +495,5 @@ export class ShelfBase extends React.Component<Translated<IShelfProps>, IState> 
 }
 
 export const Shelf = translate(undefined, {
-	withRef: true
+	withRef: true,
 })(ShelfBase)
