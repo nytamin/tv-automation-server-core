@@ -13,7 +13,7 @@ export interface IDataStoreMethods {
 	/**
 	 * Setting a value in the datastore allows us to overwrite parts of a timeline content object with that value
 	 * @param key Key to use when referencing from the timeline object
-	 * @param value Value to overwrite the timeline object's content with
+	 * @param value Value to overwrite the timeline object's content with ASDF
 	 * @param mode In temporary mode the value may be removed when the key is no longer on the timeline
 	 */
 	setTimelineDatastoreValue(key: string, value: any, mode: DatastorePersistenceMode): Promise<void>
